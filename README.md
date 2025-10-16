@@ -1,5 +1,10 @@
 # Movie Finder App 🎬
 
+<img width="221" height="480" alt="image" src="https://github.com/user-attachments/assets/14648177-e380-4dc0-8103-3e6d27d30cfd" />
+
+<img width="221" height="480" alt="image" src="https://github.com/user-attachments/assets/fec078a5-067e-45f5-adb7-4e33b667c8f8" />
+
+
 Android movie discovery app using The Movie Database (TMDb) API.
 
 ## Setup Instructions
