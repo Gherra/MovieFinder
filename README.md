@@ -6,7 +6,7 @@ Android movie discovery app using The Movie Database (TMDb) API.
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/gherra/MovieFinder.git
+git clone https://github.com/Gherra/MovieFinder.git
 cd MovieFinder
 ```
 
