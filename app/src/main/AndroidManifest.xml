@@ -28,6 +28,10 @@
             android:name=".MovieDetailActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".SwipeActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

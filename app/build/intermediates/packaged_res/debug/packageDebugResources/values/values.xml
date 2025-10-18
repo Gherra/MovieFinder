@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <string name="app_name">MovieFinder</string>
+    <string name="liked_movie">❤️ Liked: %s</string>
+    <string name="passed_movie">👎 Passed: %s</string>
+    <string name="rating_format">⭐ %.1f</string>
+    <style name="Base.Theme.MovieFinder" parent="Theme.Material3.DayNight.NoActionBar">
+        
+        
+    </style>
+    <style name="Theme.MovieFinder" parent="Base.Theme.MovieFinder"/>
+</resources>

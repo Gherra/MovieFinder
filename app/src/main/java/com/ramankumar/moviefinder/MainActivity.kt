@@ -77,6 +77,7 @@ class MainActivity : AppCompatActivity() {
         tabLayout.addTab(tabLayout.newTab().setText("Popular"))
         tabLayout.addTab(tabLayout.newTab().setText("Search"))
         tabLayout.addTab(tabLayout.newTab().setText("Favorites"))
+        tabLayout.addTab(tabLayout.newTab().setText("Swipe"))
 
         // Load popular movies by default
         loadPopularMovies()
@@ -88,6 +89,7 @@ class MainActivity : AppCompatActivity() {
                     0 -> loadPopularMovies()
                     1 -> searchEditText.requestFocus()
                     2 -> showFavorites()
+                    3 -> openSwipeActivity()
                 }
             }
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
@@ -123,13 +125,32 @@ class MainActivity : AppCompatActivity() {
     private fun loadPopularMovies() {
         lifecycleScope.launch {
             try {
+                println("========================================")
+                println("🔍 MAIN: Starting to load popular movies...")
+                println("🔍 MAIN: API Key exists: ${ApiConfig.API_KEY.isNotEmpty()}")
+                println("========================================")
+
                 val response = RetrofitClient.api.getPopularMovies(ApiConfig.API_KEY)
+
+                println("========================================")
+                println("🔍 MAIN: SUCCESS! Got ${response.results.size} movies")
+                println("========================================")
+
                 currentMovies.clear()
                 currentMovies.addAll(response.results)
                 updateFavoriteStatus()
                 movieAdapter.updateMovies(currentMovies)
+
+                Toast.makeText(this@MainActivity, "Loaded ${response.results.size} movies!", Toast.LENGTH_LONG).show()
+
             } catch (e: Exception) {
-                Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                println("========================================")
+                println("❌ MAIN: ERROR loading movies!")
+                println("❌ MAIN: ${e.message}")
+                e.printStackTrace()
+                println("========================================")
+
+                Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -188,5 +209,10 @@ class MainActivity : AppCompatActivity() {
             putExtra("IS_FAVORITE", movie.isFavorite)
         }
         detailActivityLauncher.launch(intent)
+    }
+
+    private fun openSwipeActivity() {
+        val intent = Intent(this, SwipeActivity::class.java)
+        startActivity(intent)
     }
 }

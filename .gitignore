@@ -27,3 +27,5 @@ local.properties
 bin/
 gen/
 out/
+
+app/src/main/java/com/ramankumar/moviefinder/api/ApiConfig.kt
