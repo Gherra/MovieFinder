@@ -1,4 +1,4 @@
-# Movie Finder App 🎬
+# Movie Finder App
 
 <img width="221" height="480" alt="image" src="https://github.com/user-attachments/assets/14648177-e380-4dc0-8103-3e6d27d30cfd" />
 
@@ -34,14 +34,14 @@ cd MovieFinder
 2. File → Sync Project with Gradle Files
 3. Build → Clean Project
 4. Build → Rebuild Project
-5. Click Run ▶️
+5. Click Run
 
 ## Features
-✅ Search movies by title  
-✅ Browse popular movies  
-✅ View detailed movie information  
-✅ Save movies to favorites  
-✅ Material Design dark theme  
+Search movies by title  
+Browse popular movies  
+View detailed movie information  
+Save movies to favorites  
+Material Design dark theme  
 
 ## Tech Stack
 - **Language:** Kotlin
