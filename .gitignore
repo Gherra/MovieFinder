@@ -1,23 +1,47 @@
+# IntelliJ / Android Studio
 *.iml
 .gradle
 /local.properties
 /.idea/
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
 
-# API Keys 
+# Build outputs
+/build
+**/build/
+.cxx
+.externalNativeBuild
+captures
+bin/
+gen/
+out/
+
+# Kotlin build caches
+.kotlin/
+**/kspCaches/
+
+# API Keys (keep real key files private)
 **/ApiConfig.kt
 
-# Additional build files
+# Example template should stay (so do NOT ignore .txt version)
+!**/ApiConfig.example.txt
+
+# Temporary logs and error files
+.kotlinc/
+*.log
+
+# Generated APKs / AABs
 *.apk
 *.ap_
 *.aab
 *.dex
 *.class
-bin/
-gen/
-out/
+app/build/outputs/
+
+# Jetifier / Gradle outputs
+.gradle/
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
