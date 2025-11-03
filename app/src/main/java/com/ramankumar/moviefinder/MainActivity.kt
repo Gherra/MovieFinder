@@ -15,6 +15,7 @@ import com.ramankumar.moviefinder.adapter.MovieAdapter
 import com.ramankumar.moviefinder.api.ApiConfig
 import com.ramankumar.moviefinder.api.RetrofitClient
 import com.ramankumar.moviefinder.model.Movie
+import com.ramankumar.moviefinder.ui.swipe.SwipeActivity
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
