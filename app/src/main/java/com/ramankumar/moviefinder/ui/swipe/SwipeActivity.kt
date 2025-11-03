@@ -151,9 +151,16 @@ class SwipeActivity : AppCompatActivity() {
         ratingTextView.text = getString(R.string.rating_format, movie.voteAverage)
         overviewTextView.text = movie.overview
 
+        val posterUrl = if (movie.posterPath != null) {
+            movie.getPosterUrl()
+        } else {
+            null // Show placeholder for movies without posters
+        }
+
         Glide.with(this)
-            .load(movie.getPosterUrl())
+            .load(posterUrl)
             .placeholder(R.drawable.ic_launcher_background)
+            .error(R.drawable.ic_launcher_background)
             .into(posterImageView)
 
         cardView.translationX = 0f
