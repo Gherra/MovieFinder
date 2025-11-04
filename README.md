@@ -6,6 +6,8 @@
 
 <img width="221" height="480" alt="image" src="https://github.com/user-attachments/assets/5aff21a4-1670-44ad-bdeb-ee25cc80b0ea" />
 
+<img width="221" height="480" alt="image" src="https://github.com/user-attachments/assets/5654591e-7e83-4fd9-b1e4-de75619cf90a" />
+
 
 
 Android movie discovery app using The Movie Database (TMDb) API.
