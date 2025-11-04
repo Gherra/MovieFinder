@@ -1,12 +1,12 @@
 # Movie Finder App
 
-<img width="221" height="480" alt="image" src="https://github.com/user-attachments/assets/14648177-e380-4dc0-8103-3e6d27d30cfd" />
+<img width="207" height="450" alt="image" src="https://github.com/user-attachments/assets/14648177-e380-4dc0-8103-3e6d27d30cfd" />
 
-<img width="221" height="480" alt="image" src="https://github.com/user-attachments/assets/fec078a5-067e-45f5-adb7-4e33b667c8f8" />
+<img width="207" height="450" alt="image" src="https://github.com/user-attachments/assets/fec078a5-067e-45f5-adb7-4e33b667c8f8" />
 
-<img width="221" height="480" alt="image" src="https://github.com/user-attachments/assets/5aff21a4-1670-44ad-bdeb-ee25cc80b0ea" />
+<img width="207" height="450" alt="image" src="https://github.com/user-attachments/assets/5aff21a4-1670-44ad-bdeb-ee25cc80b0ea" />
 
-<img width="221" height="480" alt="image" src="https://github.com/user-attachments/assets/5654591e-7e83-4fd9-b1e4-de75619cf90a" />
+<img width="207" height="450" alt="image" src="https://github.com/user-attachments/assets/5654591e-7e83-4fd9-b1e4-de75619cf90a" />
 
 
 
