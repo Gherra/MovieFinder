@@ -44,12 +44,8 @@ class MovieAdapter(
             .placeholder(R.drawable.ic_launcher_background)
             .into(holder.posterImageView)
 
-        // Set favorite icon
-        if (movie.isFavorite) {
-            holder.favoriteButton.setImageResource(android.R.drawable.btn_star_big_on)
-        } else {
-            holder.favoriteButton.setImageResource(android.R.drawable.btn_star_big_off)
-        }
+        // Set favorite icon with proper color
+        updateFavoriteIcon(holder.favoriteButton, movie.isFavorite)
 
         // Click listeners
         holder.itemView.setOnClickListener {
@@ -57,6 +53,11 @@ class MovieAdapter(
         }
 
         holder.favoriteButton.setOnClickListener {
+            // Toggle the local state immediately for instant feedback
+            movie.isFavorite = !movie.isFavorite
+            updateFavoriteIcon(holder.favoriteButton, movie.isFavorite)
+
+            // Then call the callback to update database
             onFavoriteClick(movie)
         }
     }
@@ -66,5 +67,19 @@ class MovieAdapter(
     fun updateMovies(newMovies: List<Movie>) {
         movies = newMovies
         notifyDataSetChanged()
+    }
+
+    /**
+     * Updates the favorite button icon and color based on favorite state
+     * Gold star = favorited, Red star = not favorited
+     */
+    private fun updateFavoriteIcon(button: ImageButton, isFavorite: Boolean) {
+        if (isFavorite) {
+            button.setImageResource(android.R.drawable.btn_star_big_on)
+            button.setColorFilter(android.graphics.Color.parseColor("#FFD700")) // Gold
+        } else {
+            button.setImageResource(android.R.drawable.btn_star_big_off)
+            button.setColorFilter(android.graphics.Color.parseColor("#E50914")) // Red
+        }
     }
 }
