@@ -61,6 +61,20 @@ class MainActivity : AppCompatActivity() {
         observeViewModel()
     }
 
+    override fun onResume() {
+        super.onResume()
+
+
+        val currentVMTab = viewModel.currentTab.value
+        val currentUITab = tabLayout.selectedTabPosition
+
+
+        if (currentUITab == 3 && currentVMTab in 0..2) {
+            tabLayout.selectTab(tabLayout.getTabAt(currentVMTab), false)
+        }
+    }
+
+
     private fun initializeViews() {
         searchEditText = findViewById(R.id.searchEditText)
         searchButton = findViewById(R.id.searchButton)
@@ -89,11 +103,14 @@ class MainActivity : AppCompatActivity() {
                 when (tab?.position) {
                     0 -> viewModel.setCurrentTab(0)
                     1 -> {
-                        viewModel.setCurrentTab(1)  //tellign viewmodel were on the search tab!
+                        viewModel.setCurrentTab(1)
                         searchEditText.requestFocus()
                     }
                     2 -> viewModel.setCurrentTab(2)
-                    3 -> openSwipeActivity()
+                    3 -> {
+
+                        openSwipeActivity()
+                    }
                 }
             }
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
