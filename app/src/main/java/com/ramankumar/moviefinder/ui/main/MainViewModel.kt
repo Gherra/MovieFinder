@@ -13,10 +13,15 @@ class MainViewModel(
     private val repository: MovieRepository
 ) : ViewModel() {
 
+    // Separate StateFlows for each tab!
+    private val _popularMovies = MutableStateFlow<List<Movie>>(emptyList())
+    private val _searchResults = MutableStateFlow<List<Movie>>(emptyList())
+    private val _favorites = MutableStateFlow<List<Movie>>(emptyList())
+
+    // This is what the UI observes - changes based on current tab
     private val _movies = MutableStateFlow<List<Movie>>(emptyList())
     val movies: StateFlow<List<Movie>> = _movies.asStateFlow()
 
-    private val _favorites = MutableStateFlow<List<Movie>>(emptyList())
     val favorites: StateFlow<List<Movie>> = _favorites.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -40,7 +45,11 @@ class MainViewModel(
 
             repository.getPopularMovies(forceRefresh = false)
                 .onSuccess { movieList ->
-                    _movies.value = movieList
+                    _popularMovies.value = movieList
+                    // If we're currently on Popular tab, update display
+                    if (_currentTab.value == 0) {
+                        _movies.value = movieList
+                    }
                 }
                 .onFailure { exception ->
                     _error.value = exception.message ?: "Failed to load movies"
@@ -52,7 +61,11 @@ class MainViewModel(
 
     fun searchMovies(query: String) {
         if (query.isEmpty()) {
-            loadPopularMovies()
+            // Clear search results if query is empty
+            _searchResults.value = emptyList()
+            if (_currentTab.value == 1) {
+                _movies.value = emptyList()
+            }
             return
         }
 
@@ -62,7 +75,11 @@ class MainViewModel(
 
             repository.searchMovies(query)
                 .onSuccess { movieList ->
-                    _movies.value = movieList
+                    _searchResults.value = movieList
+                    // If we're on Search tab, update display
+                    if (_currentTab.value == 1) {
+                        _movies.value = movieList
+                    }
                 }
                 .onFailure { exception ->
                     _error.value = exception.message ?: "Search failed"
@@ -76,6 +93,10 @@ class MainViewModel(
         viewModelScope.launch {
             repository.getAllFavorites().collect { favoriteList ->
                 _favorites.value = favoriteList
+                // If we're on Favorites tab, update display
+                if (_currentTab.value == 2) {
+                    _movies.value = favoriteList
+                }
             }
         }
     }
@@ -84,28 +105,51 @@ class MainViewModel(
         viewModelScope.launch {
             val newStatus = repository.toggleFavorite(movieId)
 
+            // Update the movie in whichever list it's in
+            _popularMovies.value = _popularMovies.value.map { movie ->
+                if (movie.id == movieId) movie.copy(isFavorite = newStatus) else movie
+            }
+
+            _searchResults.value = _searchResults.value.map { movie ->
+                if (movie.id == movieId) movie.copy(isFavorite = newStatus) else movie
+            }
+
+            // Update the displayed list if needed
             _movies.value = _movies.value.map { movie ->
-                if (movie.id == movieId) {
-                    movie.copy(isFavorite = newStatus)
-                } else {
-                    movie
-                }
+                if (movie.id == movieId) movie.copy(isFavorite = newStatus) else movie
             }
         }
     }
 
     fun setCurrentTab(position: Int) {
         _currentTab.value = position
+
+        // Update _movies based on which tab is selected
         when (position) {
-            0 -> loadPopularMovies()
+            0 -> {
+                // Popular tab - show popular movies
+                _movies.value = _popularMovies.value
+                // Load popular movies if empty
+                if (_popularMovies.value.isEmpty()) {
+                    loadPopularMovies()
+                }
+            }
+            1 -> {
+                // Search tab - show last search results (keeps your search!)
+                _movies.value = _searchResults.value
+            }
             2 -> {
+                // Favorites tab - show favorites
                 _movies.value = _favorites.value
             }
+            // Tab 3 (Swipe) opens new Activity - no data change needed
         }
     }
 
     fun getCurrentMovies(): List<Movie> {
         return when (_currentTab.value) {
+            0 -> _popularMovies.value
+            1 -> _searchResults.value
             2 -> _favorites.value
             else -> _movies.value
         }

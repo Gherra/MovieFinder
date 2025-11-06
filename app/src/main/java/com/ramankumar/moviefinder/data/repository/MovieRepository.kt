@@ -44,9 +44,8 @@ class MovieRepository(
     suspend fun searchMovies(query: String): Result<List<Movie>> {
         return try {
             val response = api.searchMovies(apiKey, query)
-            val entities = response.results.map { it.toEntity() }
-            movieDao.insertMovies(entities)
 
+            // not caching search results nw. didnt sevre any purpose
             val movies = response.results.map { movie ->
                 movie.isFavorite = favoriteDao.isFavorite(movie.id)
                 movie
