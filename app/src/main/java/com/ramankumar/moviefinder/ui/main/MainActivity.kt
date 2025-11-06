@@ -88,7 +88,10 @@ class MainActivity : AppCompatActivity() {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 when (tab?.position) {
                     0 -> viewModel.setCurrentTab(0)
-                    1 -> searchEditText.requestFocus()
+                    1 -> {
+                        viewModel.setCurrentTab(1)  //tellign viewmodel were on the search tab!
+                        searchEditText.requestFocus()
+                    }
                     2 -> viewModel.setCurrentTab(2)
                     3 -> openSwipeActivity()
                 }

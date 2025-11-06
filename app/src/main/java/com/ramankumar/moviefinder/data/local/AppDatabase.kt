@@ -17,7 +17,7 @@ import com.ramankumar.moviefinder.data.local.entities.SwipeHistoryEntity
         SwipeHistoryEntity::class,
         FavoriteEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
