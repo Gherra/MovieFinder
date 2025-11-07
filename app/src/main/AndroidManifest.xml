@@ -15,8 +15,10 @@
         android:theme="@style/Theme.MovieFinder"
         tools:targetApi="31">
 
+
+
         <activity
-            android:name=".ui.main.MainActivity"
+            android:name=".ui.main.MainActivityCompose"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -25,12 +27,13 @@
         </activity>
 
         <activity
-            android:name=".ui.detail.MovieDetailActivity"
+            android:name=".ui.swipe.SwipeActivityCompose"
             android:exported="false" />
 
         <activity
-            android:name=".ui.swipe.SwipeActivity"
+            android:name=".ui.detail.MovieDetailActivityCompose"
             android:exported="false" />
+
 
     </application>
 

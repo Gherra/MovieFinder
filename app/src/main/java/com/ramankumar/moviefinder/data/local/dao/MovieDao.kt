@@ -19,6 +19,12 @@ interface MovieDao {
     @Query("SELECT * FROM movies ORDER BY cachedTimestamp DESC LIMIT 20")
     fun getPopularMovies(): Flow<List<MovieEntity>>
 
+    @Query("SELECT * FROM movies ORDER BY cachedTimestamp DESC")
+    suspend fun getAllMovies(): List<MovieEntity>
+
+    @Query("DELETE FROM movies")
+    suspend fun deleteAllMovies()
+
     @Query("SELECT * FROM movies WHERE title LIKE '%' || :query || '%'")
     fun searchMovies(query: String): Flow<List<MovieEntity>>
 

@@ -30,20 +30,26 @@ class SwipeViewModel(
     }
 
     fun loadMovies() {
+        android.util.Log.d("SwipeViewModel", "loadMovies: Called!")
+
         viewModelScope.launch {
             _isLoading.value = true
+            android.util.Log.d("SwipeViewModel", "loadMovies: isLoading set to true")
             _error.value = null
 
-            repository.getPopularMovies(forceRefresh = true)
+            repository.getShuffledMovies()
                 .onSuccess { movieList ->
+                    android.util.Log.d("SwipeViewModel", "loadMovies: SUCCESS - Got ${movieList.size} movies")
                     _movies.value = movieList
                     _currentIndex.value = 0
                 }
                 .onFailure { exception ->
+                    android.util.Log.e("SwipeViewModel", "loadMovies: FAILURE - ${exception.message}")
                     _error.value = exception.message ?: "Failed to load movies"
                 }
 
             _isLoading.value = false
+            android.util.Log.d("SwipeViewModel", "loadMovies: isLoading set to false")
         }
     }
 
