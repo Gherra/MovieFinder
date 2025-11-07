@@ -138,6 +138,13 @@ fun MainScreen(
                     onFavoriteClick = { movie ->
                         viewModel.toggleFavorite(movie.id)
                     },
+                    onFilterChanged = { filterIndex ->
+                        when (filterIndex) {
+                            0 -> viewModel.loadPopularMovies() // Trending
+                            1 -> viewModel.loadTopRatedMovies() // Top Rated
+                            2 -> viewModel.loadNowPlayingMovies() // Recent
+                        }
+                    },
                     modifier = Modifier.padding(paddingValues)
                 )
             }
