@@ -21,12 +21,14 @@ import com.ramankumar.moviefinder.ui.compose.theme.Red
 fun ExploreScreen(
     movies: List<Movie>,
     isLoading: Boolean,
+    isRefreshing: Boolean,
     onMovieClick: (Movie) -> Unit,
     onFavoriteClick: (Movie) -> Unit,
     onFilterChanged: (Int) -> Unit,
+    onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedFilter by remember { mutableIntStateOf(0) }  // ← FIXED: mutableIntStateOf
+    var selectedFilter by remember { mutableIntStateOf(0) }
 
     Column(
         modifier = modifier
@@ -110,15 +112,41 @@ fun ExploreScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Refresh Button (Simple alternative to pull-to-refresh)
+        if (!isLoading && !isRefreshing) {
+            TextButton(
+                onClick = onRefresh,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) {
+                Text(
+                    text = "🔄 Refresh Movies",
+                    color = Red,
+                    fontSize = 14.sp
+                )
+            }
+        }
+
+        // Loading indicator for refresh
+        if (isRefreshing) {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                color = Red,
+                trackColor = Color(0xFF2C2C2C)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
         // Content
         Box(modifier = Modifier.fillMaxSize()) {
             when {
-                isLoading -> LoadingIndicator()
+                isLoading && movies.isEmpty() -> LoadingIndicator()
 
                 movies.isEmpty() -> EmptyState(
                     emoji = "🎬",
                     title = "No Movies Found",
-                    message = "Try refreshing or check your connection"
+                    message = "Tap refresh button or check your connection"
                 )
 
                 else -> {
@@ -129,7 +157,6 @@ fun ExploreScreen(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         items(movies) { movie ->
-                            // REMOVED AnimatedVisibility - simpler and works!
                             MovieCard(
                                 movie = movie,
                                 onMovieClick = { onMovieClick(movie) },
