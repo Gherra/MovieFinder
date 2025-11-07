@@ -20,6 +20,7 @@ import com.ramankumar.moviefinder.data.local.AppDatabase
 import com.ramankumar.moviefinder.data.repository.MovieRepository
 import com.ramankumar.moviefinder.ui.detail.MovieDetailActivity
 import com.ramankumar.moviefinder.ui.swipe.SwipeActivity
+import com.ramankumar.moviefinder.ui.swipe.SwipeActivityCompose
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -193,7 +194,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openSwipeActivity() {
-        val intent = Intent(this, SwipeActivity::class.java)
+//        val intent = Intent(this, SwipeActivity::class.java)
+        val intent = Intent(this, SwipeActivityCompose::class.java)
         startActivity(intent)
+
     }
 }
