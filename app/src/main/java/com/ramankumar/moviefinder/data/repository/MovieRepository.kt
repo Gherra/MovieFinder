@@ -116,11 +116,25 @@ class MovieRepository(
 
     suspend fun getShuffledMovies(): Result<List<Movie>> {
         return try {
+            android.util.Log.d("MovieRepository", "getShuffledMovies: Starting API call")
+
             val response = api.getPopularMovies(apiKey, page = 1)
+            android.util.Log.d("MovieRepository", "getShuffledMovies: API response code = ${response.code()}")
+
             val movies = response.body()?.results ?: emptyList()
+            android.util.Log.d("MovieRepository", "getShuffledMovies: Got ${movies.size} movies")
+
+            if (movies.isEmpty()) {
+                android.util.Log.e("MovieRepository", "getShuffledMovies: No movies found!")
+                return Result.failure(Exception("No movies found"))
+            }
+
             val shuffledMovies = movies.shuffled()
+            android.util.Log.d("MovieRepository", "getShuffledMovies: Shuffled! Returning ${shuffledMovies.size} movies")
+
             Result.success(shuffledMovies)
         } catch (e: Exception) {
+            android.util.Log.e("MovieRepository", "getShuffledMovies: Exception - ${e.message}", e)
             Result.failure(e)
         }
     }

@@ -3,6 +3,7 @@ package com.ramankumar.moviefinder.ui.compose.screens
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,11 +36,17 @@ fun SwipeScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    val currentMovie = viewModel.getCurrentMovie()
+//    val currentMovie = viewModel.getCurrentMovie()
+
+//    LaunchedEffect(Unit) {
+//        viewModel.loadMovies()
+//    }
+
+    val currentMovie = movies.getOrNull(currentIndex)
 
     // Swipe state
-    var offsetX by remember { mutableStateOf(0f) }
-    var offsetY by remember { mutableStateOf(0f) }
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
 
     val screenWidth = LocalConfiguration.current.screenWidthDp *
             LocalConfiguration.current.densityDpi / 160f
@@ -53,7 +60,7 @@ fun SwipeScreen(
                 title = { Text("Swipe Movies") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Filled.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
