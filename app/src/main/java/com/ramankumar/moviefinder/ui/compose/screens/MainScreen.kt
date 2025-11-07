@@ -4,10 +4,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.Style
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -44,6 +46,12 @@ sealed class BottomNavItem(
         Icons.Outlined.Explore,
         "Explore"
     )
+    object ForYou : BottomNavItem(
+        "for_you",
+        Icons.Outlined.StarBorder,
+        Icons.Filled.Star,
+        "For You"
+    )
     object Favorites : BottomNavItem(
         Screen.Favorites.route,
         Icons.Outlined.FavoriteBorder,
@@ -61,9 +69,10 @@ fun MainScreen(
 ) {
     val movies by viewModel.movies.collectAsStateWithLifecycle()
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
+    val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
-
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     var selectedRoute by remember { mutableStateOf(Screen.Explore.route) }
     var searchQuery by remember { mutableStateOf("") }
@@ -72,6 +81,7 @@ fun MainScreen(
         BottomNavItem.Swipe,
         BottomNavItem.Search,
         BottomNavItem.Explore,
+        BottomNavItem.ForYou,
         BottomNavItem.Favorites
     )
 
@@ -107,6 +117,10 @@ fun MainScreen(
                         onClick = {
                             when (item.route) {
                                 "swipe" -> onSwipeClick()
+                                "for_you" -> {
+                                    selectedRoute = item.route
+                                    viewModel.loadRecommendations()
+                                }
                                 else -> {
                                     selectedRoute = item.route
                                     viewModel.setCurrentTab(
@@ -171,6 +185,22 @@ fun MainScreen(
                     onMovieClick = onMovieClick,
                     onFavoriteClick = { movie ->
                         viewModel.toggleFavorite(movie.id)
+                    },
+                    modifier = Modifier.padding(paddingValues)
+                )
+            }
+
+            "for_you" -> {
+                RecommendationsScreen(
+                    movies = recommendations,
+                    isLoading = isLoading,
+                    error = error,
+                    onMovieClick = onMovieClick,
+                    onFavoriteClick = { movie ->
+                        viewModel.toggleFavorite(movie.id)
+                    },
+                    onRefresh = {
+                        viewModel.loadRecommendations()
                     },
                     modifier = Modifier.padding(paddingValues)
                 )
