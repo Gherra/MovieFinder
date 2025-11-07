@@ -66,7 +66,7 @@ fun ExploreScreen(
                 selected = selectedFilter == 0,
                 onClick = {
                     selectedFilter = 0
-                    onFilterChanged(0)  // ← CALL CALLBACK!
+                    onFilterChanged(0)
                 },
                 label = { Text("🔥 Trending") },
                 colors = FilterChipDefaults.filterChipColors(
@@ -81,7 +81,7 @@ fun ExploreScreen(
                 selected = selectedFilter == 1,
                 onClick = {
                     selectedFilter = 1
-                    onFilterChanged(1)  // ← CALL CALLBACK!
+                    onFilterChanged(1)
                 },
                 label = { Text("⭐ Top Rated") },
                 colors = FilterChipDefaults.filterChipColors(
@@ -96,7 +96,7 @@ fun ExploreScreen(
                 selected = selectedFilter == 2,
                 onClick = {
                     selectedFilter = 2
-                    onFilterChanged(2)  // ← CALL CALLBACK!
+                    onFilterChanged(2)
                 },
                 label = { Text("📅 Recent") },
                 colors = FilterChipDefaults.filterChipColors(
