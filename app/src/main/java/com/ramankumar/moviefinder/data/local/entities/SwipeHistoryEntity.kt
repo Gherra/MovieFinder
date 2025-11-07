@@ -9,6 +9,7 @@ data class SwipeHistoryEntity(
     val id: Long = 0,
     val movieId: Int,
     val movieTitle: String,
-    val swipedRight: Boolean,
+    val swipedRight: Boolean,  // true = liked (swipe right)
+    val swipedNeutral: Boolean = false,  // true = not sure (swipe up)
     val timestamp: Long = System.currentTimeMillis()
 )
