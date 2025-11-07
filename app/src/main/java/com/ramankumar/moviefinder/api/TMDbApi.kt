@@ -10,7 +10,8 @@ interface TMDbApi {
     @GET("search/movie")
     suspend fun searchMovies(
         @Query("api_key") apiKey: String,
-        @Query("query") query: String
+        @Query("query") query: String,
+        @Query("page") page: Int = 1
     ): Response<MovieResponse>
 
     @GET("movie/popular")
