@@ -11,6 +11,7 @@ import com.ramankumar.moviefinder.data.local.entities.toMovie
 import com.ramankumar.moviefinder.model.Movie
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 
 class MovieRepository(
     private val movieDao: MovieDao,
@@ -20,7 +21,7 @@ class MovieRepository(
     private val apiKey: String
 ) {
 
-    // ========== PAGINATION SUPPORT ==========
+    // PAGINATION SUPPORT
 
     /**
      * Fetches multiple pages of popular movies for pagination
@@ -112,7 +113,7 @@ class MovieRepository(
         }
     }
 
-    // ========== SWIPE FUNCTIONALITY ==========
+    // SWIPE FUNCTIONALITY
 
     /**
      * Gets shuffled movies for swiping, excluding already swiped ones
@@ -191,7 +192,7 @@ class MovieRepository(
         )
     }
 
-    // ========== SEARCH ==========
+    //  SEARCH
 
     suspend fun searchMovies(query: String): Result<List<Movie>> {
         return try {
@@ -213,7 +214,7 @@ class MovieRepository(
         }
     }
 
-    // ========== FAVORITES ==========
+    // FAVORITES
 
     fun getLikedMovies(): Flow<List<SwipeHistoryEntity>> {
         return swipeHistoryDao.getLikedMovies()
@@ -253,6 +254,75 @@ class MovieRepository(
 
     suspend fun isFavorite(movieId: Int): Boolean {
         return favoriteDao.isFavorite(movieId)
+    }
+
+
+    suspend fun getRecommendedMovies(): Result<List<Movie>> {
+        return try {
+            // Get all liked movies from swipe history
+            val likedMovieIds = swipeHistoryDao.getLikedMovies().first()
+
+            android.util.Log.d("MovieRepository", "getRecommendedMovies: Found ${likedMovieIds.size} liked movies")
+
+            if (likedMovieIds.isEmpty()) {
+                // Not enough data for recommendations
+                return Result.failure(Exception("Not enough swipe data. Like at least 5 movies to get recommendations!"))
+            }
+
+            // Get full movie details for liked movies
+            val likedMovies = likedMovieIds.mapNotNull { swipe ->
+                movieDao.getMovieById(swipe.movieId)?.toMovie()
+            }
+
+            if (likedMovies.size < 3) {
+                return Result.failure(Exception("Need at least 3 liked movies for recommendations"))
+            }
+
+
+            val avgRating = likedMovies.map { it.voteAverage }.average()
+            val minRating = (avgRating - 1.0).coerceAtLeast(5.0) // At least 5.0 rating
+
+
+            val recentMovies = likedMovies.count { movie ->
+                val year = movie.releaseDate.take(4).toIntOrNull() ?: 0
+                year >= 2020
+            }
+            val prefersRecent = recentMovies.toFloat() / likedMovies.size >= 0.6f
+
+            val releaseDateFrom = if (prefersRecent) "2020-01-01" else "2010-01-01"
+            val releaseDateTo = "2025-12-31"
+
+            android.util.Log.d("MovieRepository", "getRecommendedMovies: Avg rating=$avgRating, minRating=$minRating, prefersRecent=$prefersRecent")
+
+            // tmdb discover API doesn't support genre filtering directly without genre IDs
+            // right now im using rating and year filters
+            // In a real app or maybe later on will have to extract genre IDs from liked movies and pass them
+
+            val allRecommendations = mutableListOf<Movie>()
+            for (page in 1..3) {
+                val response = api.discoverMovies(
+                    apiKey = apiKey,
+                    minRating = minRating,
+                    releaseDateFrom = releaseDateFrom,
+                    releaseDateTo = releaseDateTo,
+                    sortBy = "vote_average.desc",
+                    page = page
+                )
+                val movies = response.body()?.results ?: emptyList()
+                allRecommendations.addAll(movies)
+            }
+
+
+            val swipedIds = swipeHistoryDao.getAllSwipedMovieIds()
+            val unseenRecommendations = allRecommendations.filter { it.id !in swipedIds }
+
+            android.util.Log.d("MovieRepository", "getRecommendedMovies: Got ${unseenRecommendations.size} recommendations")
+
+            Result.success(unseenRecommendations.take(60)) // Return top 60
+        } catch (e: Exception) {
+            android.util.Log.e("MovieRepository", "getRecommendedMovies: Error - ${e.message}", e)
+            Result.failure(e)
+        }
     }
 }
 
