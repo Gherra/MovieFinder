@@ -60,6 +60,7 @@ fun MainScreen(
     val movies by viewModel.movies.collectAsStateWithLifecycle()
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
     var selectedRoute by remember { mutableStateOf(Screen.Explore.route) }
     var searchQuery by remember { mutableStateOf("") }
@@ -134,6 +135,7 @@ fun MainScreen(
                 ExploreScreen(
                     movies = movies,
                     isLoading = isLoading,
+                    isRefreshing = isRefreshing,
                     onMovieClick = onMovieClick,
                     onFavoriteClick = { movie ->
                         viewModel.toggleFavorite(movie.id)
@@ -144,6 +146,9 @@ fun MainScreen(
                             1 -> viewModel.loadTopRatedMovies() // Top Rated
                             2 -> viewModel.loadNowPlayingMovies() // Recent
                         }
+                    },
+                    onRefresh = {
+                        viewModel.loadPopularMovies(refresh = true)
                     },
                     modifier = Modifier.padding(paddingValues)
                 )
