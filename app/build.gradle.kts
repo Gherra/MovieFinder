@@ -8,8 +8,6 @@ android {
     namespace = "com.ramankumar.moviefinder"
     compileSdk = 36
 
-
-
     defaultConfig {
         applicationId = "com.ramankumar.moviefinder"
         minSdk = 24
@@ -29,12 +27,24 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
+    }
+
+    buildFeatures {
+        viewBinding = true
+        compose = true
+    }
+
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.8"  // ← COMPOSE COMPILER VERSION!
     }
 }
 
@@ -53,13 +63,13 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
-    // Glide for image loading
+    // Glide for image loading (XML views)
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
-    // Room Database (UPDATED - using ksp instead of annotationProcessor)
+    // Room Database
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")  // CHANGED FROM annotationProcessor
+    ksp("androidx.room:room-compiler:2.6.1")
 
     // RecyclerView and CardView
     implementation("androidx.recyclerview:recyclerview:1.3.2")
@@ -68,19 +78,28 @@ dependencies {
     // ViewModel and LiveData
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")  // ADDED
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
 
-    // Coroutines (ADDED - needed for Room + ViewModel)
+    // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
-    // Jetpack Compose
+
+
+    // Compose BOM (manages Compose versions)
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
+
+    // Compose UI
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
+
+    // Material Design 3
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+
+    // Activity integration for Compose
+    implementation("androidx.activity:activity-compose:1.8.2")
 
     // Compose Lifecycle & ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
@@ -89,10 +108,10 @@ dependencies {
     // Navigation Compose
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
-    // Image Loading - Coil for Compose (replaces Glide)
+    // Coil for image loading in Compose
     implementation("io.coil-kt:coil-compose:2.5.0")
 
-    // Accompanist (useful Compose utilities)
+    // Accompanist utilities
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
 
     // Debug tools
