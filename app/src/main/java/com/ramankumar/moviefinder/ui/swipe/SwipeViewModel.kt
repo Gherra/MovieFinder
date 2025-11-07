@@ -3,6 +3,7 @@ package com.ramankumar.moviefinder.ui.swipe
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ramankumar.moviefinder.data.repository.MovieRepository
+import com.ramankumar.moviefinder.data.repository.SwipeStats
 import com.ramankumar.moviefinder.model.Movie
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,8 +26,17 @@ class SwipeViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    // Swipe statistics
+    private val _swipeStats = MutableStateFlow<SwipeStats?>(null)
+    val swipeStats: StateFlow<SwipeStats?> = _swipeStats.asStateFlow()
+
+    // Show reset confirmation dialog
+    private val _showResetDialog = MutableStateFlow(false)
+    val showResetDialog: StateFlow<Boolean> = _showResetDialog.asStateFlow()
+
     init {
         loadMovies()
+        loadSwipeStats()
     }
 
     fun loadMovies() {
@@ -57,8 +67,9 @@ class SwipeViewModel(
         val currentMovie = getCurrentMovie() ?: return
 
         viewModelScope.launch {
-            repository.recordSwipe(currentMovie, liked = true)
+            repository.recordSwipe(currentMovie, liked = true, neutral = false)
             moveToNextMovie()
+            loadSwipeStats()
         }
     }
 
@@ -66,8 +77,46 @@ class SwipeViewModel(
         val currentMovie = getCurrentMovie() ?: return
 
         viewModelScope.launch {
-            repository.recordSwipe(currentMovie, liked = false)
+            repository.recordSwipe(currentMovie, liked = false, neutral = false)
             moveToNextMovie()
+            loadSwipeStats()
+        }
+    }
+
+    fun onSwipeUp() {
+        val currentMovie = getCurrentMovie() ?: return
+
+        viewModelScope.launch {
+            repository.recordSwipe(currentMovie, liked = false, neutral = true)
+            moveToNextMovie()
+            loadSwipeStats()
+            android.util.Log.d("SwipeViewModel", "onSwipeUp: Recorded neutral swipe for ${currentMovie.title}")
+        }
+    }
+
+    fun loadSwipeStats() {
+        viewModelScope.launch {
+            val stats = repository.getSwipeStats()
+            _swipeStats.value = stats
+            android.util.Log.d("SwipeViewModel", "loadSwipeStats: ${stats.totalSwipes} total, ${stats.liked} liked, ${stats.disliked} disliked, ${stats.neutral} neutral")
+        }
+    }
+
+    fun showResetDialog() {
+        _showResetDialog.value = true
+    }
+
+    fun hideResetDialog() {
+        _showResetDialog.value = false
+    }
+
+    fun resetSwipeHistory() {
+        viewModelScope.launch {
+            repository.clearSwipeHistory()
+            _swipeStats.value = SwipeStats(0, 0, 0, 0)
+            hideResetDialog()
+            loadMovies() // Reload movies to show all again
+            android.util.Log.d("SwipeViewModel", "resetSwipeHistory: History cleared")
         }
     }
 

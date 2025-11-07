@@ -10,7 +10,8 @@ interface TMDbApi {
     @GET("search/movie")
     suspend fun searchMovies(
         @Query("api_key") apiKey: String,
-        @Query("query") query: String
+        @Query("query") query: String,
+        @Query("page") page: Int = 1
     ): Response<MovieResponse>
 
     @GET("movie/popular")
@@ -28,6 +29,18 @@ interface TMDbApi {
     @GET("movie/now_playing")
     suspend fun getNowPlayingMovies(
         @Query("api_key") apiKey: String,
+        @Query("page") page: Int = 1
+    ): Response<MovieResponse>
+
+    @GET("discover/movie")
+    suspend fun discoverMovies(
+        @Query("api_key") apiKey: String,
+        @Query("with_genres") genres: String? = null,
+        @Query("vote_average.gte") minRating: Double? = null,
+        @Query("vote_average.lte") maxRating: Double? = null,
+        @Query("primary_release_date.gte") releaseDateFrom: String? = null,
+        @Query("primary_release_date.lte") releaseDateTo: String? = null,
+        @Query("sort_by") sortBy: String = "popularity.desc",
         @Query("page") page: Int = 1
     ): Response<MovieResponse>
 }

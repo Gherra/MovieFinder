@@ -12,8 +12,6 @@ import com.ramankumar.moviefinder.model.Movie
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
-import com.ramankumar.moviefinder.data.local.entities.toEntity
-import com.ramankumar.moviefinder.data.local.entities.toMovie
 
 class MovieRepository(
     private val movieDao: MovieDao,
@@ -23,18 +21,39 @@ class MovieRepository(
     private val apiKey: String
 ) {
 
-    suspend fun getPopularMovies(forceRefresh: Boolean = false): Result<List<Movie>> {
+    // PAGINATION SUPPORT
+
+    /**
+     * Fetches multiple pages of popular movies for pagination
+     * @param startPage Starting page number (default 1)
+     * @param pageCount Number of pages to fetch (default 5 = ~100 movies)
+     * @param forceRefresh Whether to bypass cache and fetch fresh data
+     */
+    suspend fun getPopularMovies(
+        startPage: Int = 1,
+        pageCount: Int = 5,
+        forceRefresh: Boolean = false
+    ): Result<List<Movie>> {
         return try {
             if (forceRefresh || movieDao.getMovieCount() == 0) {
-                // Fetch from API
-                val response = api.getPopularMovies(apiKey, page = 1)
-                val movies = response.body()?.results ?: emptyList()
+                // Fetch multiple pages from API
+                val allMovies = mutableListOf<Movie>()
 
-                // Cache in database
-                movieDao.deleteAllMovies()
-                movieDao.insertMovies(movies.map { it.toEntity() })
+                for (page in startPage until startPage + pageCount) {
+                    val response = api.getPopularMovies(apiKey, page = page)
+                    val movies = response.body()?.results ?: emptyList()
+                    allMovies.addAll(movies)
+                    android.util.Log.d("MovieRepository", "getPopularMovies: Fetched page $page with ${movies.size} movies")
+                }
 
-                Result.success(movies)
+                // Cache in database (only if startPage == 1 to avoid duplicates)
+                if (startPage == 1) {
+                    movieDao.deleteAllMovies()
+                    movieDao.insertMovies(allMovies.map { it.toEntity() })
+                }
+
+                android.util.Log.d("MovieRepository", "getPopularMovies: Total movies fetched = ${allMovies.size}")
+                Result.success(allMovies)
             } else {
                 // Return from cache
                 val cachedEntities = movieDao.getAllMovies()
@@ -42,29 +61,160 @@ class MovieRepository(
                 Result.success(cachedMovies)
             }
         } catch (e: Exception) {
+            android.util.Log.e("MovieRepository", "getPopularMovies: Error - ${e.message}", e)
             Result.failure(e)
         }
     }
 
-    suspend fun searchMovies(query: String): Result<List<Movie>> {
+    /**
+     * Loads more pages for infinite scroll
+     */
+    suspend fun loadMorePopularMovies(currentPage: Int): Result<List<Movie>> {
+        return getPopularMovies(startPage = currentPage, pageCount = 3, forceRefresh = true)
+    }
+
+    suspend fun getTopRatedMovies(
+        startPage: Int = 1,
+        pageCount: Int = 5
+    ): Result<List<Movie>> {
         return try {
-            val response = api.searchMovies(apiKey, query)
-            val movies = response.body()?.results ?: emptyList()  // ← ADD .body()
-            Result.success(movies)
+            val allMovies = mutableListOf<Movie>()
+
+            for (page in startPage until startPage + pageCount) {
+                val response = api.getTopRatedMovies(apiKey, page = page)
+                val movies = response.body()?.results ?: emptyList()
+                allMovies.addAll(movies)
+            }
+
+            android.util.Log.d("MovieRepository", "getTopRatedMovies: Total = ${allMovies.size}")
+            Result.success(allMovies)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    suspend fun recordSwipe(movie: Movie, liked: Boolean) {
+    suspend fun getNowPlayingMovies(
+        startPage: Int = 1,
+        pageCount: Int = 5
+    ): Result<List<Movie>> {
+        return try {
+            val allMovies = mutableListOf<Movie>()
+
+            for (page in startPage until startPage + pageCount) {
+                val response = api.getNowPlayingMovies(apiKey, page = page)
+                val movies = response.body()?.results ?: emptyList()
+                allMovies.addAll(movies)
+            }
+
+            android.util.Log.d("MovieRepository", "getNowPlayingMovies: Total = ${allMovies.size}")
+            Result.success(allMovies)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // SWIPE FUNCTIONALITY
+
+    /**
+     * Gets shuffled movies for swiping, excluding already swiped ones
+     * Fetches 10 pages (~200 movies) for variety
+     */
+    suspend fun getShuffledMovies(): Result<List<Movie>> {
+        return try {
+            android.util.Log.d("MovieRepository", "getShuffledMovies: Starting API call")
+
+            // Fetch multiple pages for variety (10 pages = ~200 movies)
+            val allMovies = mutableListOf<Movie>()
+            for (page in 1..10) {
+                val response = api.getPopularMovies(apiKey, page = page)
+                val movies = response.body()?.results ?: emptyList()
+                allMovies.addAll(movies)
+            }
+
+            android.util.Log.d("MovieRepository", "getShuffledMovies: Fetched ${allMovies.size} movies from 10 pages")
+
+            // Get list of already swiped movie IDs
+            val swipedIds = swipeHistoryDao.getAllSwipedMovieIds()
+            android.util.Log.d("MovieRepository", "getShuffledMovies: ${swipedIds.size} movies already swiped")
+
+            // Filter out swiped movies
+            val unswipedMovies = allMovies.filter { it.id !in swipedIds }
+            android.util.Log.d("MovieRepository", "getShuffledMovies: ${unswipedMovies.size} unswiped movies available")
+
+            if (unswipedMovies.isEmpty()) {
+                android.util.Log.e("MovieRepository", "getShuffledMovies: No unswiped movies! Returning all movies.")
+                // If all movies swiped, return all (user can reset history)
+                val shuffled = allMovies.shuffled()
+                return Result.success(shuffled)
+            }
+
+            val shuffledMovies = unswipedMovies.shuffled()
+            android.util.Log.d("MovieRepository", "getShuffledMovies: Returning ${shuffledMovies.size} shuffled movies")
+
+            Result.success(shuffledMovies)
+        } catch (e: Exception) {
+            android.util.Log.e("MovieRepository", "getShuffledMovies: Exception - ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Records a swipe action (left = dislike, right = like, up = neutral)
+     * @param neutral Set to true for "not sure" swipes (swipe up gesture)
+     */
+    suspend fun recordSwipe(movie: Movie, liked: Boolean, neutral: Boolean = false) {
         val swipe = SwipeHistoryEntity(
             movieId = movie.id,
             movieTitle = movie.title,
-            swipedRight = liked
+            swipedRight = liked,
+            swipedNeutral = neutral
         )
         swipeHistoryDao.insertSwipe(swipe)
         movieDao.insertMovie(movie.toEntity())
+
+        android.util.Log.d("MovieRepository", "recordSwipe: Movie ${movie.id} - liked=$liked, neutral=$neutral")
     }
+
+    /**
+     * Clears all swipe history (for reset functionality)
+     */
+    suspend fun clearSwipeHistory() {
+        swipeHistoryDao.deleteAllSwipes()
+        android.util.Log.d("MovieRepository", "clearSwipeHistory: All swipe history cleared")
+    }
+
+    suspend fun getSwipeStats(): SwipeStats {
+        return SwipeStats(
+            totalSwipes = swipeHistoryDao.getTotalSwipeCount(),
+            liked = swipeHistoryDao.getLikedCount(),
+            disliked = swipeHistoryDao.getDislikedCount(),
+            neutral = swipeHistoryDao.getNeutralCount()
+        )
+    }
+
+    //  SEARCH
+
+    suspend fun searchMovies(query: String): Result<List<Movie>> {
+        return try {
+            // Search across multiple pages for better results
+            val allMovies = mutableListOf<Movie>()
+
+            for (page in 1..3) {
+                val response = api.searchMovies(apiKey, query, page = page)
+                val movies = response.body()?.results ?: emptyList()
+                allMovies.addAll(movies)
+
+                // Stop if we got less than 20 results (last page)
+                if (movies.size < 20) break
+            }
+
+            Result.success(allMovies)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // FAVORITES
 
     fun getLikedMovies(): Flow<List<SwipeHistoryEntity>> {
         return swipeHistoryDao.getLikedMovies()
@@ -72,14 +222,6 @@ class MovieRepository(
 
     fun getDislikedMovies(): Flow<List<SwipeHistoryEntity>> {
         return swipeHistoryDao.getDislikedMovies()
-    }
-
-    suspend fun getSwipeStats(): SwipeStats {
-        return SwipeStats(
-            totalSwipes = swipeHistoryDao.getTotalSwipeCount(),
-            liked = swipeHistoryDao.getLikedCount(),
-            disliked = swipeHistoryDao.getDislikedCount()
-        )
     }
 
     suspend fun addFavorite(movieId: Int) {
@@ -114,56 +256,79 @@ class MovieRepository(
         return favoriteDao.isFavorite(movieId)
     }
 
-    suspend fun getShuffledMovies(): Result<List<Movie>> {
+
+    suspend fun getRecommendedMovies(): Result<List<Movie>> {
         return try {
-            android.util.Log.d("MovieRepository", "getShuffledMovies: Starting API call")
+            // Get all liked movies from swipe history
+            val likedMovieIds = swipeHistoryDao.getLikedMovies().first()
 
-            val response = api.getPopularMovies(apiKey, page = 1)
-            android.util.Log.d("MovieRepository", "getShuffledMovies: API response code = ${response.code()}")
+            android.util.Log.d("MovieRepository", "getRecommendedMovies: Found ${likedMovieIds.size} liked movies")
 
-            val movies = response.body()?.results ?: emptyList()
-            android.util.Log.d("MovieRepository", "getShuffledMovies: Got ${movies.size} movies")
-
-            if (movies.isEmpty()) {
-                android.util.Log.e("MovieRepository", "getShuffledMovies: No movies found!")
-                return Result.failure(Exception("No movies found"))
+            if (likedMovieIds.isEmpty()) {
+                // Not enough data for recommendations
+                return Result.failure(Exception("Not enough swipe data. Like at least 5 movies to get recommendations!"))
             }
 
-            val shuffledMovies = movies.shuffled()
-            android.util.Log.d("MovieRepository", "getShuffledMovies: Shuffled! Returning ${shuffledMovies.size} movies")
+            // Get full movie details for liked movies
+            val likedMovies = likedMovieIds.mapNotNull { swipe ->
+                movieDao.getMovieById(swipe.movieId)?.toMovie()
+            }
 
-            Result.success(shuffledMovies)
+            if (likedMovies.size < 3) {
+                return Result.failure(Exception("Need at least 3 liked movies for recommendations"))
+            }
+
+
+            val avgRating = likedMovies.map { it.voteAverage }.average()
+            val minRating = (avgRating - 1.0).coerceAtLeast(5.0) // At least 5.0 rating
+
+
+            val recentMovies = likedMovies.count { movie ->
+                val year = movie.releaseDate.take(4).toIntOrNull() ?: 0
+                year >= 2020
+            }
+            val prefersRecent = recentMovies.toFloat() / likedMovies.size >= 0.6f
+
+            val releaseDateFrom = if (prefersRecent) "2020-01-01" else "2010-01-01"
+            val releaseDateTo = "2025-12-31"
+
+            android.util.Log.d("MovieRepository", "getRecommendedMovies: Avg rating=$avgRating, minRating=$minRating, prefersRecent=$prefersRecent")
+
+            // tmdb discover API doesn't support genre filtering directly without genre IDs
+            // right now im using rating and year filters
+            // In a real app or maybe later on will have to extract genre IDs from liked movies and pass them
+
+            val allRecommendations = mutableListOf<Movie>()
+            for (page in 1..3) {
+                val response = api.discoverMovies(
+                    apiKey = apiKey,
+                    minRating = minRating,
+                    releaseDateFrom = releaseDateFrom,
+                    releaseDateTo = releaseDateTo,
+                    sortBy = "vote_average.desc",
+                    page = page
+                )
+                val movies = response.body()?.results ?: emptyList()
+                allRecommendations.addAll(movies)
+            }
+
+
+            val swipedIds = swipeHistoryDao.getAllSwipedMovieIds()
+            val unseenRecommendations = allRecommendations.filter { it.id !in swipedIds }
+
+            android.util.Log.d("MovieRepository", "getRecommendedMovies: Got ${unseenRecommendations.size} recommendations")
+
+            Result.success(unseenRecommendations.take(60)) // Return top 60
         } catch (e: Exception) {
-            android.util.Log.e("MovieRepository", "getShuffledMovies: Exception - ${e.message}", e)
+            android.util.Log.e("MovieRepository", "getRecommendedMovies: Error - ${e.message}", e)
             Result.failure(e)
         }
     }
-
-    suspend fun getTopRatedMovies(): Result<List<Movie>> {
-        return try {
-            val response = api.getTopRatedMovies(apiKey, page = 1)
-            val movies = response.body()?.results ?: emptyList()
-            Result.success(movies)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun getNowPlayingMovies(): Result<List<Movie>> {
-        return try {
-            val response = api.getNowPlayingMovies(apiKey, page = 1)
-            val movies = response.body()?.results ?: emptyList()
-            Result.success(movies)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-
 }
 
 data class SwipeStats(
     val totalSwipes: Int,
     val liked: Int,
-    val disliked: Int
+    val disliked: Int,
+    val neutral: Int = 0
 )

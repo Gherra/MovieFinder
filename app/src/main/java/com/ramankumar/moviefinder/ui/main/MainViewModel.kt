@@ -17,12 +17,14 @@ class MainViewModel(
     private val _popularMovies = MutableStateFlow<List<Movie>>(emptyList())
     private val _searchResults = MutableStateFlow<List<Movie>>(emptyList())
     private val _favorites = MutableStateFlow<List<Movie>>(emptyList())
+    private val _recommendations = MutableStateFlow<List<Movie>>(emptyList())
 
-    // This is what the UI observes - changes based on current tab
+
     private val _movies = MutableStateFlow<List<Movie>>(emptyList())
     val movies: StateFlow<List<Movie>> = _movies.asStateFlow()
 
     val favorites: StateFlow<List<Movie>> = _favorites.asStateFlow()
+    val recommendations: StateFlow<List<Movie>> = _recommendations.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -33,17 +35,34 @@ class MainViewModel(
     private val _currentTab = MutableStateFlow(0)
     val currentTab: StateFlow<Int> = _currentTab.asStateFlow()
 
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    private val _currentPage = MutableStateFlow(1)
+    private val _isLoadingMore = MutableStateFlow(false)
+    val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
+
     init {
         loadPopularMovies()
         observeFavorites()
     }
 
-    fun loadPopularMovies() {
+    fun loadPopularMovies(refresh: Boolean = false) {
         viewModelScope.launch {
-            _isLoading.value = true
+            if (refresh) {
+                _isRefreshing.value = true
+                _currentPage.value = 1
+            } else {
+                _isLoading.value = true
+            }
             _error.value = null
 
-            repository.getPopularMovies(forceRefresh = false)
+            repository.getPopularMovies(
+                startPage = 1,
+                pageCount = 5,  // Load 5 pages (~100 movies)
+                forceRefresh = refresh
+            )
                 .onSuccess { movieList ->
                     _popularMovies.value = movieList
                     // If we're currently on Popular tab, update display
@@ -56,6 +75,7 @@ class MainViewModel(
                 }
 
             _isLoading.value = false
+            _isRefreshing.value = false
         }
     }
 
@@ -135,14 +155,14 @@ class MainViewModel(
                 }
             }
             1 -> {
-                // Search tab - show last search results (keeps your search!)
+                // Search tab - show last search results
                 _movies.value = _searchResults.value
             }
             2 -> {
                 // Favorites tab - show favorites
                 _movies.value = _favorites.value
             }
-            // Tab 3 (Swipe) opens new Activity - no data change needed
+
         }
     }
 
@@ -160,7 +180,7 @@ class MainViewModel(
             _isLoading.value = true
             _error.value = null
 
-            repository.getTopRatedMovies()
+            repository.getTopRatedMovies(startPage = 1, pageCount = 5)
                 .onSuccess { movieList ->
                     _movies.value = movieList
                 }
@@ -177,12 +197,32 @@ class MainViewModel(
             _isLoading.value = true
             _error.value = null
 
-            repository.getNowPlayingMovies()
+            repository.getNowPlayingMovies(startPage = 1, pageCount = 5)
                 .onSuccess { movieList ->
                     _movies.value = movieList
                 }
                 .onFailure { exception ->
                     _error.value = exception.message ?: "Failed to load recent movies"
+                }
+
+            _isLoading.value = false
+        }
+    }
+
+    fun loadRecommendations() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            repository.getRecommendedMovies()
+                .onSuccess { movieList ->
+                    _recommendations.value = movieList
+                    _movies.value = movieList
+                    android.util.Log.d("MainViewModel", "loadRecommendations: Loaded ${movieList.size} recommendations")
+                }
+                .onFailure { exception ->
+                    _error.value = exception.message ?: "Failed to load recommendations"
+                    android.util.Log.e("MainViewModel", "loadRecommendations: Error - ${exception.message}")
                 }
 
             _isLoading.value = false
