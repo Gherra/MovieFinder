@@ -33,17 +33,34 @@ class MainViewModel(
     private val _currentTab = MutableStateFlow(0)
     val currentTab: StateFlow<Int> = _currentTab.asStateFlow()
 
+    // Pagination state
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    private val _currentPage = MutableStateFlow(1)
+    private val _isLoadingMore = MutableStateFlow(false)
+    val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
+
     init {
         loadPopularMovies()
         observeFavorites()
     }
 
-    fun loadPopularMovies() {
+    fun loadPopularMovies(refresh: Boolean = false) {
         viewModelScope.launch {
-            _isLoading.value = true
+            if (refresh) {
+                _isRefreshing.value = true
+                _currentPage.value = 1
+            } else {
+                _isLoading.value = true
+            }
             _error.value = null
 
-            repository.getPopularMovies(forceRefresh = false)
+            repository.getPopularMovies(
+                startPage = 1,
+                pageCount = 5,  // Load 5 pages (~100 movies)
+                forceRefresh = refresh
+            )
                 .onSuccess { movieList ->
                     _popularMovies.value = movieList
                     // If we're currently on Popular tab, update display
@@ -56,6 +73,7 @@ class MainViewModel(
                 }
 
             _isLoading.value = false
+            _isRefreshing.value = false
         }
     }
 
@@ -160,7 +178,7 @@ class MainViewModel(
             _isLoading.value = true
             _error.value = null
 
-            repository.getTopRatedMovies()
+            repository.getTopRatedMovies(startPage = 1, pageCount = 5)
                 .onSuccess { movieList ->
                     _movies.value = movieList
                 }
@@ -177,7 +195,7 @@ class MainViewModel(
             _isLoading.value = true
             _error.value = null
 
-            repository.getNowPlayingMovies()
+            repository.getNowPlayingMovies(startPage = 1, pageCount = 5)
                 .onSuccess { movieList ->
                     _movies.value = movieList
                 }
