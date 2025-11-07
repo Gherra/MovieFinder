@@ -18,7 +18,7 @@ private val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun MovieFinderTheme(
-    darkTheme: Boolean = true, // Always dark for your app
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
