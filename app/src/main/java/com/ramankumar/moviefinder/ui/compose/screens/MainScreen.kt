@@ -4,9 +4,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Style
 import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Style
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -26,8 +28,8 @@ sealed class BottomNavItem(
 ) {
     object Swipe : BottomNavItem(
         "swipe",
-        Icons.Outlined.Explore,
-        Icons.Outlined.Explore,
+        Icons.Outlined.Style,
+        Icons.Filled.Style,
         "Swipe"
     )
     object Search : BottomNavItem(
@@ -61,6 +63,7 @@ fun MainScreen(
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+
 
     var selectedRoute by remember { mutableStateOf(Screen.Explore.route) }
     var searchQuery by remember { mutableStateOf("") }
