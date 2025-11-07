@@ -30,4 +30,13 @@ interface SwipeHistoryDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM swipe_history WHERE movieId = :movieId)")
     suspend fun hasSwipedOn(movieId: Int): Boolean
+
+    @Query("SELECT movieId FROM swipe_history")
+    suspend fun getAllSwipedMovieIds(): List<Int>
+
+    @Query("SELECT COUNT(*) FROM swipe_history WHERE swipedNeutral = 1")
+    suspend fun getNeutralCount(): Int
+
+    @Query("DELETE FROM swipe_history")
+    suspend fun deleteAllSwipes()
 }
