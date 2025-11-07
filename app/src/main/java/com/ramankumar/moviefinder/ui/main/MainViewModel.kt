@@ -154,4 +154,40 @@ class MainViewModel(
             else -> _movies.value
         }
     }
+
+    fun loadTopRatedMovies() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            repository.getTopRatedMovies()
+                .onSuccess { movieList ->
+                    _movies.value = movieList
+                }
+                .onFailure { exception ->
+                    _error.value = exception.message ?: "Failed to load top rated movies"
+                }
+
+            _isLoading.value = false
+        }
+    }
+
+    fun loadNowPlayingMovies() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            repository.getNowPlayingMovies()
+                .onSuccess { movieList ->
+                    _movies.value = movieList
+                }
+                .onFailure { exception ->
+                    _error.value = exception.message ?: "Failed to load recent movies"
+                }
+
+            _isLoading.value = false
+        }
+    }
+
+
 }
