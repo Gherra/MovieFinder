@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -42,7 +43,7 @@ fun DetailScreen(
                 title = { Text("Movie Details") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Filled.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -60,7 +61,7 @@ fun DetailScreen(
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
         ) {
-            // Backdrop Image
+
             if (movieBackdrop != null) {
                 AsyncImage(
                     model = "https://image.tmdb.org/t/p/w780$movieBackdrop",
@@ -101,7 +102,7 @@ fun DetailScreen(
                     )
 
                     Text(
-                        text = "⭐ ${String.format("%.1f", movieRating)}/10",
+                        text = "⭐ %.1f/10".format(java.util.Locale.US, movieRating),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Gold
