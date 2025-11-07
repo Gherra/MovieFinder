@@ -19,6 +19,7 @@ import com.ramankumar.moviefinder.api.RetrofitClient
 import com.ramankumar.moviefinder.data.local.AppDatabase
 import com.ramankumar.moviefinder.data.repository.MovieRepository
 import com.ramankumar.moviefinder.ui.detail.MovieDetailActivity
+import com.ramankumar.moviefinder.ui.detail.MovieDetailActivityCompose
 import com.ramankumar.moviefinder.ui.swipe.SwipeActivity
 import com.ramankumar.moviefinder.ui.swipe.SwipeActivityCompose
 import kotlinx.coroutines.launch
@@ -181,7 +182,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openMovieDetail(movie: com.ramankumar.moviefinder.model.Movie) {
-        val intent = Intent(this, MovieDetailActivity::class.java).apply {
+        val intent = Intent(this, MovieDetailActivityCompose::class.java).apply {
             putExtra("MOVIE_ID", movie.id)
             putExtra("MOVIE_TITLE", movie.title)
             putExtra("MOVIE_YEAR", movie.releaseDate.take(4))
