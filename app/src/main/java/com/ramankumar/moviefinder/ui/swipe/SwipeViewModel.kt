@@ -34,7 +34,8 @@ class SwipeViewModel(
             _isLoading.value = true
             _error.value = null
 
-            repository.getPopularMovies(forceRefresh = true)
+
+            repository.getShuffledMovies()
                 .onSuccess { movieList ->
                     _movies.value = movieList
                     _currentIndex.value = 0
