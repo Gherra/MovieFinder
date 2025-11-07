@@ -4,7 +4,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,11 +15,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.ramankumar.moviefinder.model.Movie
 import com.ramankumar.moviefinder.ui.compose.components.LoadingIndicator
+import com.ramankumar.moviefinder.ui.compose.theme.Gold
 import com.ramankumar.moviefinder.ui.compose.theme.Red
 import com.ramankumar.moviefinder.ui.swipe.SwipeViewModel
 import kotlinx.coroutines.launch
@@ -35,12 +37,8 @@ fun SwipeScreen(
     val currentIndex by viewModel.currentIndex.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
-
-//    val currentMovie = viewModel.getCurrentMovie()
-
-//    LaunchedEffect(Unit) {
-//        viewModel.loadMovies()
-//    }
+    val swipeStats by viewModel.swipeStats.collectAsState()
+    val showResetDialog by viewModel.showResetDialog.collectAsState()
 
     val currentMovie = movies.getOrNull(currentIndex)
 
@@ -50,9 +48,37 @@ fun SwipeScreen(
 
     val screenWidth = LocalConfiguration.current.screenWidthDp *
             LocalConfiguration.current.densityDpi / 160f
-    val swipeThreshold = screenWidth * 0.4f
+    val screenHeight = LocalConfiguration.current.screenHeightDp *
+            LocalConfiguration.current.densityDpi / 160f
+    val swipeThresholdX = screenWidth * 0.4f
+    val swipeThresholdY = screenHeight * 0.3f
 
     val scope = rememberCoroutineScope()
+
+    // Reset confirmation dialog
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.hideResetDialog() },
+            title = { Text("Reset Swipe History?") },
+            text = { Text("This will clear all your swipe history and show you all movies again. This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.resetSwipeHistory() },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Red)
+                ) {
+                    Text("Reset")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.hideResetDialog() }) {
+                    Text("Cancel")
+                }
+            },
+            containerColor = Color(0xFF1F1F1F),
+            titleContentColor = Color.White,
+            textContentColor = Color(0xFFCCCCCC)
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -63,13 +89,84 @@ fun SwipeScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 },
+                actions = {
+                    // Reset history button
+                    IconButton(onClick = { viewModel.showResetDialog() }) {
+                        Icon(
+                            Icons.Filled.Refresh,
+                            contentDescription = "Reset History",
+                            tint = Red
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFF1F1F1F),
                     titleContentColor = Color.White
                 )
             )
         },
-        containerColor = Color.Black
+        containerColor = Color.Black,
+        bottomBar = {
+            // Swipe stats at bottom
+            swipeStats?.let { stats ->
+                Surface(
+                    color = Color(0xFF1F1F1F),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        // Liked
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "${stats.liked}",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Gold
+                            )
+                            Text(
+                                text = "❤️ Liked",
+                                fontSize = 12.sp,
+                                color = Color(0xFF888888)
+                            )
+                        }
+
+                        // Not Sure
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "${stats.neutral}",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFFAA00)
+                            )
+                            Text(
+                                text = "🤔 Not Sure",
+                                fontSize = 12.sp,
+                                color = Color(0xFF888888)
+                            )
+                        }
+
+                        // Passed
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "${stats.disliked}",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF888888)
+                            )
+                            Text(
+                                text = "👎 Passed",
+                                fontSize = 12.sp,
+                                color = Color(0xFF888888)
+                            )
+                        }
+                    }
+                }
+            }
+        }
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -77,12 +174,28 @@ fun SwipeScreen(
                 .padding(paddingValues)
         ) {
             // Background instruction text
-            Text(
-                text = "Swipe right if you like it\nSwipe left to pass",
-                style = MaterialTheme.typography.titleLarge,
-                color = Color(0xFF444444),
-                modifier = Modifier.align(Alignment.Center)
-            )
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "⬆️ Swipe up if you're not sure",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF444444)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "➡️ Swipe right to like",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF444444)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "⬅️ Swipe left to pass",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF444444)
+                )
+            }
 
             when {
                 isLoading -> LoadingIndicator()
@@ -107,7 +220,16 @@ fun SwipeScreen(
                             offsetY += dragAmount.y
                         },
                         onDragEnd = {
-                            if (abs(offsetX) > swipeThreshold) {
+                            // Check swipe up first (negative Y = up)
+                            if (offsetY < -swipeThresholdY && abs(offsetX) < swipeThresholdX) {
+                                scope.launch {
+                                    viewModel.onSwipeUp()
+                                    offsetX = 0f
+                                    offsetY = 0f
+                                }
+                            }
+                            // Check horizontal swipe
+                            else if (abs(offsetX) > swipeThresholdX) {
                                 scope.launch {
                                     if (offsetX > 0) {
                                         viewModel.onSwipeRight()
@@ -117,7 +239,9 @@ fun SwipeScreen(
                                     offsetX = 0f
                                     offsetY = 0f
                                 }
-                            } else {
+                            }
+                            // Reset if no threshold met
+                            else {
                                 offsetX = 0f
                                 offsetY = 0f
                             }
@@ -128,11 +252,23 @@ fun SwipeScreen(
                 }
 
                 else -> {
-                    Text(
-                        text = "No more movies!",
-                        color = Color.White,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "🎉 No more movies!",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Tap the refresh button above to reset history",
+                            fontSize = 14.sp,
+                            color = Color(0xFF888888)
+                        )
+                    }
                 }
             }
         }
@@ -150,7 +286,15 @@ fun SwipeCard(
     totalMovies: Int
 ) {
     val rotation = (offsetX / 20f).coerceIn(-30f, 30f)
-    val alpha = (1f - (abs(offsetX) / 1000f)).coerceIn(0f, 1f)
+    val alpha = (1f - (abs(offsetX) / 1000f) - (abs(offsetY) / 1000f)).coerceIn(0f, 1f)
+
+    // Show hint colors based on swipe direction
+    val hintColor = when {
+        offsetY < -200 -> Color(0xFFFFAA00) // Orange for "not sure" (up)
+        offsetX > 200 -> Gold // Gold for like (right)
+        offsetX < -200 -> Color.Red // Red for pass (left)
+        else -> Color.Transparent
+    }
 
     Box(
         modifier = Modifier
@@ -165,6 +309,23 @@ fun SwipeCard(
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
         )
+
+        // Hint text overlay
+        if (hintColor != Color.Transparent) {
+            Text(
+                text = when {
+                    offsetY < -200 -> "NOT SURE 🤔"
+                    offsetX > 200 -> "LIKE ❤️"
+                    else -> "PASS 👎"
+                },
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = hintColor,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(16.dp)
+            )
+        }
 
         Card(
             modifier = Modifier
@@ -200,7 +361,7 @@ fun SwipeCard(
                     contentScale = ContentScale.Crop
                 )
 
-                // Movie Info (scrollable if needed)
+                // Movie Info
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -225,8 +386,8 @@ fun SwipeCard(
                         )
 
                         Text(
-                            text = "⭐ ${String.format("%.1f", movie.voteAverage)}",
-                            color = Color(0xFFFFD700)
+                            text = "⭐ %.1f".format(java.util.Locale.US, movie.voteAverage),
+                            color = Gold
                         )
                     }
 
@@ -245,15 +406,6 @@ fun SwipeCard(
                         color = Color(0xFFCCCCCC),
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 4
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Text(
-                        text = "← Swipe to decide →",
-                        color = Color(0xFF666666),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 }
             }
