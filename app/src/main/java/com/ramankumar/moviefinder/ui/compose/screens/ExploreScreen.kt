@@ -23,6 +23,7 @@ fun ExploreScreen(
     isLoading: Boolean,
     onMovieClick: (Movie) -> Unit,
     onFavoriteClick: (Movie) -> Unit,
+    onFilterChanged: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var selectedFilter by remember { mutableIntStateOf(0) }  // ← FIXED: mutableIntStateOf
@@ -63,7 +64,10 @@ fun ExploreScreen(
         ) {
             FilterChip(
                 selected = selectedFilter == 0,
-                onClick = { selectedFilter = 0 },
+                onClick = {
+                    selectedFilter = 0
+                    onFilterChanged(0)  // ← CALL CALLBACK!
+                },
                 label = { Text("🔥 Trending") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Red,
@@ -75,7 +79,10 @@ fun ExploreScreen(
 
             FilterChip(
                 selected = selectedFilter == 1,
-                onClick = { selectedFilter = 1 },
+                onClick = {
+                    selectedFilter = 1
+                    onFilterChanged(1)  // ← CALL CALLBACK!
+                },
                 label = { Text("⭐ Top Rated") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Red,
@@ -87,7 +94,10 @@ fun ExploreScreen(
 
             FilterChip(
                 selected = selectedFilter == 2,
-                onClick = { selectedFilter = 2 },
+                onClick = {
+                    selectedFilter = 2
+                    onFilterChanged(2)  // ← CALL CALLBACK!
+                },
                 label = { Text("📅 Recent") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Red,
