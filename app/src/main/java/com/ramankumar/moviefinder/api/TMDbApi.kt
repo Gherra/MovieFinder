@@ -1,8 +1,10 @@
 package com.ramankumar.moviefinder.api
 
 import com.ramankumar.moviefinder.model.MovieResponse
+import com.ramankumar.moviefinder.model.VideoResponse
 import retrofit2.Response
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface TMDbApi {
@@ -45,4 +47,10 @@ interface TMDbApi {
         @Query("sort_by") sortBy: String = "popularity.desc",
         @Query("page") page: Int = 1
     ): Response<MovieResponse>
+
+    @GET("movie/{movie_id}/videos")
+    suspend fun getMovieVideos(
+        @Path("movie_id") movieId: Int,
+        @Query("api_key") apiKey: String
+    ): Response<VideoResponse>
 }
