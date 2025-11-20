@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.ramankumar.moviefinder.api.ApiConfig
 import com.ramankumar.moviefinder.api.RetrofitClient
@@ -12,12 +14,20 @@ import com.ramankumar.moviefinder.data.local.AppDatabase
 import com.ramankumar.moviefinder.data.repository.MovieRepository
 import com.ramankumar.moviefinder.ui.compose.screens.DetailScreen
 import com.ramankumar.moviefinder.ui.compose.theme.MovieFinderTheme
+import com.ramankumar.moviefinder.ui.trailer.TrailerPlayerActivity
+import com.ramankumar.moviefinder.ui.trailer.TrailerViewModel
+import com.ramankumar.moviefinder.ui.trailer.TrailerViewModelFactory
 import kotlinx.coroutines.launch
 
 class MovieDetailActivityCompose : ComponentActivity() {
 
     private lateinit var repository: MovieRepository
     private var movieId = 0
+
+    // NEW: Trailer ViewModel
+    private val trailerViewModel: TrailerViewModel by viewModels {
+        TrailerViewModelFactory(repository)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,8 +51,15 @@ class MovieDetailActivityCompose : ComponentActivity() {
             apiKey = ApiConfig.API_KEY
         )
 
+        // NEW: Load trailers (no YouTube API key needed!)
+        trailerViewModel.loadTrailers(movieId)
+
         setContent {
             MovieFinderTheme {
+                // NEW: Collect trailer state
+                val trailers = trailerViewModel.trailers.collectAsStateWithLifecycle().value
+                val isLoadingTrailers = trailerViewModel.isLoading.collectAsStateWithLifecycle().value
+
                 DetailScreen(
                     movieId = movieId,
                     movieTitle = movieTitle,
@@ -51,9 +68,14 @@ class MovieDetailActivityCompose : ComponentActivity() {
                     movieOverview = movieOverview,
                     movieBackdrop = movieBackdrop,
                     initialIsFavorite = initialIsFavorite,
+                    trailers = trailers,  // NEW
+                    isLoadingTrailers = isLoadingTrailers,  // NEW
                     onBackClick = { finish() },
                     onFavoriteToggle = { newStatus ->
                         toggleFavorite(newStatus)
+                    },
+                    onTrailerClick = { videoKey, videoTitle ->  // NEW
+                        openTrailerPlayer(videoKey, videoTitle)
                     }
                 )
             }
@@ -75,12 +97,20 @@ class MovieDetailActivityCompose : ComponentActivity() {
                 Toast.LENGTH_SHORT
             ).show()
 
-            // Return result to MainActivity
             val resultIntent = Intent().apply {
                 putExtra("MOVIE_ID", movieId)
                 putExtra("IS_FAVORITE", newStatus)
             }
             setResult(RESULT_OK, resultIntent)
         }
+    }
+
+    // NEW: Open trailer player (stays in app!)
+    private fun openTrailerPlayer(videoKey: String, videoTitle: String) {
+        val intent = Intent(this, TrailerPlayerActivity::class.java).apply {
+            putExtra("VIDEO_KEY", videoKey)
+            putExtra("VIDEO_TITLE", videoTitle)
+        }
+        startActivity(intent)
     }
 }

@@ -12,6 +12,7 @@ import com.ramankumar.moviefinder.model.Movie
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
+import com.ramankumar.moviefinder.model.Video
 
 class MovieRepository(
     private val movieDao: MovieDao,
@@ -502,6 +503,37 @@ class MovieRepository(
             10752 -> "War"
             37 -> "Western"
             else -> "Unknown($genreId)"
+        }
+    }
+
+    suspend fun getMovieTrailers(movieId: Int): Result<List<Video>> {
+        return try {
+            android.util.Log.d("MovieRepository", "getMovieTrailers: Fetching for movie $movieId")
+
+            val response = api.getMovieVideos(movieId, apiKey)
+
+            if (response.isSuccessful) {
+                val videos = response.body()?.results ?: emptyList()
+
+                // Filter and sort trailers
+                val trailers = videos
+                    .filter { it.isYouTube() }  // Only YouTube videos
+                    .sortedByDescending { it.getPriority() }  // Best first
+
+                android.util.Log.d("MovieRepository", "getMovieTrailers: Found ${trailers.size} YouTube trailers")
+
+                if (trailers.isNotEmpty()) {
+                    android.util.Log.d("MovieRepository", "Top trailer: ${trailers[0].name} (${trailers[0].type}, official=${trailers[0].official})")
+                }
+
+                Result.success(trailers)
+            } else {
+                android.util.Log.e("MovieRepository", "getMovieTrailers: API error ${response.code()}")
+                Result.failure(Exception("Failed to fetch trailers: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MovieRepository", "getMovieTrailers: Exception - ${e.message}", e)
+            Result.failure(e)
         }
     }
 }
