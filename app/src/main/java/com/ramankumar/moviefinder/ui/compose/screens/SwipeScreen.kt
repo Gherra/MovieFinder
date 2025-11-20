@@ -50,8 +50,8 @@ fun SwipeScreen(
             LocalConfiguration.current.densityDpi / 160f
     val screenHeight = LocalConfiguration.current.screenHeightDp *
             LocalConfiguration.current.densityDpi / 160f
-    val swipeThresholdX = screenWidth * 0.4f
-    val swipeThresholdY = screenHeight * 0.3f
+    val swipeThresholdX = screenWidth * 0.5f  // ← INCREASED from 0.4f (less sensitive)
+    val swipeThresholdY = screenHeight * 0.4f  // ← INCREASED from 0.3f
 
     val scope = rememberCoroutineScope()
 
