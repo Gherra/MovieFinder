@@ -35,11 +35,13 @@ interface TMDbApi {
     @GET("discover/movie")
     suspend fun discoverMovies(
         @Query("api_key") apiKey: String,
-        @Query("with_genres") genres: String? = null,
+        @Query("with_genres") withGenres: String? = null,
         @Query("vote_average.gte") minRating: Double? = null,
         @Query("vote_average.lte") maxRating: Double? = null,
         @Query("primary_release_date.gte") releaseDateFrom: String? = null,
         @Query("primary_release_date.lte") releaseDateTo: String? = null,
+        @Query("vote_count.gte") voteCountGte: Int? = null,
+        @Query("with_original_language") originalLanguage: String? = null,
         @Query("sort_by") sortBy: String = "popularity.desc",
         @Query("page") page: Int = 1
     ): Response<MovieResponse>

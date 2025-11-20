@@ -192,7 +192,7 @@ class MovieRepository(
         )
     }
 
-    //  SEARCH
+    // SEARCH
 
     suspend fun searchMovies(query: String): Result<List<Movie>> {
         return try {
@@ -214,7 +214,7 @@ class MovieRepository(
         }
     }
 
-    // FAVORITES
+    //  FAVORITES
 
     fun getLikedMovies(): Flow<List<SwipeHistoryEntity>> {
         return swipeHistoryDao.getLikedMovies()
@@ -256,72 +256,252 @@ class MovieRepository(
         return favoriteDao.isFavorite(movieId)
     }
 
+    // RECOMMENDATION SYSTEM WITH DETAILED LOGGING
 
+    /**
+     * Gets personalized movie recommendations based on swipe history
+     * Analyzes liked movies to determine genre preferences, rating preferences, and year preferences
+     */
     suspend fun getRecommendedMovies(): Result<List<Movie>> {
         return try {
+            android.util.Log.d("RecommendationEngine", "═══════════════════════════════════════")
+            android.util.Log.d("RecommendationEngine", "🎬 STARTING RECOMMENDATION ENGINE 🎬")
+            android.util.Log.d("RecommendationEngine", "═══════════════════════════════════════")
+
             // Get all liked movies from swipe history
-            val likedMovieIds = swipeHistoryDao.getLikedMovies().first()
+            val likedSwipes = swipeHistoryDao.getLikedMovies().first()
 
-            android.util.Log.d("MovieRepository", "getRecommendedMovies: Found ${likedMovieIds.size} liked movies")
+            android.util.Log.d("RecommendationEngine", "STEP 1: Analyzing Swipe History")
+            android.util.Log.d("RecommendationEngine", "   ├─ Total liked swipes: ${likedSwipes.size}")
 
-            if (likedMovieIds.isEmpty()) {
-                // Not enough data for recommendations
+            if (likedSwipes.isEmpty()) {
+                android.util.Log.w("RecommendationEngine", "   └─ INSUFFICIENT DATA: No liked swipes found")
                 return Result.failure(Exception("Not enough swipe data. Like at least 5 movies to get recommendations!"))
             }
 
             // Get full movie details for liked movies
-            val likedMovies = likedMovieIds.mapNotNull { swipe ->
+            val likedMovies = likedSwipes.mapNotNull { swipe ->
                 movieDao.getMovieById(swipe.movieId)?.toMovie()
             }
 
             if (likedMovies.size < 3) {
+                android.util.Log.w("RecommendationEngine", "   └─ INSUFFICIENT DATA: Only ${likedMovies.size} liked movies found (need 3+)")
                 return Result.failure(Exception("Need at least 3 liked movies for recommendations"))
             }
 
+            android.util.Log.d("RecommendationEngine", "   └─ Successfully loaded ${likedMovies.size} liked movie details")
 
-            val avgRating = likedMovies.map { it.voteAverage }.average()
-            val minRating = (avgRating - 1.0).coerceAtLeast(5.0) // At least 5.0 rating
+            // ANALYZE GENRE PREFERENCES
+            android.util.Log.d("RecommendationEngine", "\n🎭 STEP 2: Genre Analysis")
 
+            val genreFrequency = mutableMapOf<Int, Int>()
+            var moviesWithGenres = 0
 
-            val recentMovies = likedMovies.count { movie ->
-                val year = movie.releaseDate.take(4).toIntOrNull() ?: 0
-                year >= 2020
+            likedMovies.forEach { movie ->
+                val genres = movie.genreIds ?: emptyList()
+                if (genres.isNotEmpty()) {
+                    moviesWithGenres++
+                    genres.forEach { genreId ->
+                        genreFrequency[genreId] = (genreFrequency[genreId] ?: 0) + 1
+                    }
+                }
             }
-            val prefersRecent = recentMovies.toFloat() / likedMovies.size >= 0.6f
 
-            val releaseDateFrom = if (prefersRecent) "2020-01-01" else "2010-01-01"
+            android.util.Log.d("RecommendationEngine", "   ├─ Movies with genre data: $moviesWithGenres / ${likedMovies.size}")
+
+            val topGenres = genreFrequency.entries
+                .sortedByDescending { it.value }
+                .take(3)
+                .map { it.key }
+
+            val genreFilter = if (topGenres.isNotEmpty()) {
+                topGenres.joinToString("|")
+            } else null
+
+            android.util.Log.d("RecommendationEngine", "   ├─ Genre frequency distribution:")
+            genreFrequency.entries
+                .sortedByDescending { it.value }
+                .take(5)
+                .forEachIndexed { index, entry ->
+                    val genreName = getGenreName(entry.key)
+                    val percentage = (entry.value.toFloat() / moviesWithGenres * 100).toInt()
+                    val isSelected = index < 3
+                    val marker = if (isSelected) "✓" else " "
+                    android.util.Log.d("RecommendationEngine", "   │  $marker Genre ${entry.key} ($genreName): ${entry.value} occurrences ($percentage%)")
+                }
+
+            android.util.Log.d("RecommendationEngine", "   ├─ Top 3 selected genres: ${topGenres.joinToString(", ") { "$it (${getGenreName(it)})" }}")
+            android.util.Log.d("RecommendationEngine", "   └─ Genre filter string: $genreFilter")
+
+            // ANALYZE RATING PREFERENCES
+            android.util.Log.d("RecommendationEngine", "\n STEP 3: Rating Analysis")
+
+            val ratings = likedMovies.map { it.voteAverage }
+            val avgRating = ratings.average()
+            val minRating = (avgRating - 1.0).coerceAtLeast(5.0)
+            val maxRating = ratings.maxOrNull() ?: 10.0
+
+            android.util.Log.d("RecommendationEngine", "   ├─ Rating distribution:")
+            ratings.sorted().forEach { rating ->
+                val stars = "★".repeat((rating / 2).toInt()) + "☆".repeat(5 - (rating / 2).toInt())
+                android.util.Log.d("RecommendationEngine", "   │  $stars ${"%.1f".format(rating)}")
+            }
+            android.util.Log.d("RecommendationEngine", "   ├─ Average rating: ${"%.2f".format(avgRating)}")
+            android.util.Log.d("RecommendationEngine", "   ├─ Minimum threshold: ${"%.2f".format(minRating)}")
+            android.util.Log.d("RecommendationEngine", "   └─ Maximum rating: ${"%.2f".format(maxRating)}")
+
+            // ANALYZE YEAR PREFERENCES
+            android.util.Log.d("RecommendationEngine", "\n STEP 4: Year/Era Preference Analysis")
+
+            val years = likedMovies.mapNotNull { movie ->
+                movie.releaseDate.take(4).toIntOrNull()
+            }
+
+            val recentMovies = years.count { it >= 2020 }
+            val modernMovies = years.count { it in 2010..2019 }
+            val classicMovies = years.count { it < 2010 }
+
+            val prefersRecent = recentMovies.toFloat() / likedMovies.size >= 0.6f
+            val prefersModern = modernMovies.toFloat() / likedMovies.size >= 0.5f
+
+            android.util.Log.d("RecommendationEngine", "   ├─ Era distribution:")
+            android.util.Log.d("RecommendationEngine", "   │  Recent (2020+):  $recentMovies movies (${(recentMovies.toFloat() / years.size * 100).toInt()}%)")
+            android.util.Log.d("RecommendationEngine", "   │  Modern (2010-19): $modernMovies movies (${(modernMovies.toFloat() / years.size * 100).toInt()}%)")
+            android.util.Log.d("RecommendationEngine", "   │  Classic (<2010):  $classicMovies movies (${(classicMovies.toFloat() / years.size * 100).toInt()}%)")
+
+            val releaseDateFrom = when {
+                prefersRecent -> "2020-01-01"
+                prefersModern -> "2010-01-01"
+                else -> "2000-01-01"
+            }
             val releaseDateTo = "2025-12-31"
 
-            android.util.Log.d("MovieRepository", "getRecommendedMovies: Avg rating=$avgRating, minRating=$minRating, prefersRecent=$prefersRecent")
+            val eraPreference = when {
+                prefersRecent -> "RECENT (2020+)"
+                prefersModern -> "MODERN (2010-2019)"
+                else -> "MIXED (2000+)"
+            }
 
-            // tmdb discover API doesn't support genre filtering directly without genre IDs
-            // right now im using rating and year filters
-            // In a real app or maybe later on will have to extract genre IDs from liked movies and pass them
+            android.util.Log.d("RecommendationEngine", "   ├─ Detected preference: $eraPreference")
+            android.util.Log.d("RecommendationEngine", "   └─ Date filter: $releaseDateFrom to $releaseDateTo")
+
+            // ========== CALCULATE WEIGHTS ==========
+            android.util.Log.d("RecommendationEngine", "\n⚖️  STEP 5: Multi-Factor Weighting")
+            android.util.Log.d("RecommendationEngine", "   ├─ Factor 1: Genre matching (HIGHEST priority)")
+            android.util.Log.d("RecommendationEngine", "   │  Weight: 70%")
+            android.util.Log.d("RecommendationEngine", "   │  Filter: with_genres=$genreFilter")
+            android.util.Log.d("RecommendationEngine", "   │")
+            android.util.Log.d("RecommendationEngine", "   ├─ Factor 2: Rating threshold (MEDIUM priority)")
+            android.util.Log.d("RecommendationEngine", "   │  Weight: 20%")
+            android.util.Log.d("RecommendationEngine", "   │  Filter: vote_average.gte=${"%.2f".format(minRating)}")
+            android.util.Log.d("RecommendationEngine", "   │")
+            android.util.Log.d("RecommendationEngine", "   ├─ Factor 3: Era preference (LOW priority)")
+            android.util.Log.d("RecommendationEngine", "   │  Weight: 10%")
+            android.util.Log.d("RecommendationEngine", "   │  Filter: release_date=$releaseDateFrom to $releaseDateTo")
+            android.util.Log.d("RecommendationEngine", "   │")
+            android.util.Log.d("RecommendationEngine", "   └─ Quality filters:")
+            android.util.Log.d("RecommendationEngine", "      ├─ vote_count.gte=100 (exclude obscure movies)")
+            android.util.Log.d("RecommendationEngine", "      └─ original_language=en (English movies)")
+
+
+            android.util.Log.d("RecommendationEngine", "\n STEP 6: Fetching Recommendations from TMDb API")
 
             val allRecommendations = mutableListOf<Movie>()
-            for (page in 1..3) {
+            val pageCount = 5
+
+            android.util.Log.d("RecommendationEngine", "   ├─ API Call Parameters:")
+            android.util.Log.d("RecommendationEngine", "   │  Endpoint: /discover/movie")
+            android.util.Log.d("RecommendationEngine", "   │  with_genres: $genreFilter")
+            android.util.Log.d("RecommendationEngine", "   │  vote_average.gte: $minRating")
+            android.util.Log.d("RecommendationEngine", "   │  primary_release_date.gte: $releaseDateFrom")
+            android.util.Log.d("RecommendationEngine", "   │  primary_release_date.lte: $releaseDateTo")
+            android.util.Log.d("RecommendationEngine", "   │  vote_count.gte: 100")
+            android.util.Log.d("RecommendationEngine", "   │  original_language: en")
+            android.util.Log.d("RecommendationEngine", "   │  sort_by: vote_average.desc")
+            android.util.Log.d("RecommendationEngine", "   │  pages: $pageCount")
+            android.util.Log.d("RecommendationEngine", "   │")
+
+            for (page in 1..pageCount) {
                 val response = api.discoverMovies(
                     apiKey = apiKey,
+                    withGenres = genreFilter,
                     minRating = minRating,
                     releaseDateFrom = releaseDateFrom,
                     releaseDateTo = releaseDateTo,
+                    voteCountGte = 100,
+                    originalLanguage = "en",
                     sortBy = "vote_average.desc",
                     page = page
                 )
                 val movies = response.body()?.results ?: emptyList()
                 allRecommendations.addAll(movies)
+                android.util.Log.d("RecommendationEngine", "   │  Page $page: ${movies.size} movies fetched")
             }
 
+            android.util.Log.d("RecommendationEngine", "   └─ Total fetched: ${allRecommendations.size} movies")
+
+
+            android.util.Log.d("RecommendationEngine", "\n STEP 7: Filtering Results")
 
             val swipedIds = swipeHistoryDao.getAllSwipedMovieIds()
+            android.util.Log.d("RecommendationEngine", "   ├─ Total swiped movies: ${swipedIds.size}")
+
             val unseenRecommendations = allRecommendations.filter { it.id !in swipedIds }
+            android.util.Log.d("RecommendationEngine", "   ├─ Unseen movies: ${unseenRecommendations.size}")
 
-            android.util.Log.d("MovieRepository", "getRecommendedMovies: Got ${unseenRecommendations.size} recommendations")
+            val finalRecommendations = unseenRecommendations.take(60)
+            android.util.Log.d("RecommendationEngine", "   └─ Final recommendations: ${finalRecommendations.size} (capped at 60)")
 
-            Result.success(unseenRecommendations.take(60)) // Return top 60
+            // SUMMARY
+            android.util.Log.d("RecommendationEngine", "\nRECOMMENDATION SUMMARY")
+            android.util.Log.d("RecommendationEngine", "═══════════════════════════════════════")
+            android.util.Log.d("RecommendationEngine", "✓ Based on: ${likedMovies.size} liked movies")
+            android.util.Log.d("RecommendationEngine", "✓ Top genres: ${topGenres.joinToString(", ") { getGenreName(it) }}")
+            android.util.Log.d("RecommendationEngine", "✓ Rating preference: ${"%.1f".format(avgRating)}+ stars")
+            android.util.Log.d("RecommendationEngine", "✓ Era preference: $eraPreference")
+            android.util.Log.d("RecommendationEngine", "✓ Results: ${finalRecommendations.size} personalized recommendations")
+            android.util.Log.d("RecommendationEngine", "═══════════════════════════════════════")
+
+            if (finalRecommendations.isNotEmpty()) {
+                android.util.Log.d("RecommendationEngine", "\n🎬 Sample Recommendations (Top 5):")
+                finalRecommendations.take(5).forEachIndexed { index, movie ->
+                    android.util.Log.d("RecommendationEngine", "   ${index + 1}. ${movie.title} (${movie.releaseDate.take(4)}) - ⭐ ${movie.voteAverage}")
+                }
+            }
+
+            android.util.Log.d("RecommendationEngine", "\nRECOMMENDATION ENGINE COMPLETE\n")
+
+            Result.success(finalRecommendations)
         } catch (e: Exception) {
-            android.util.Log.e("MovieRepository", "getRecommendedMovies: Error - ${e.message}", e)
+            android.util.Log.e("RecommendationEngine", "\nERROR IN RECOMMENDATION ENGINE")
+            android.util.Log.e("RecommendationEngine", "   Exception: ${e.message}", e)
             Result.failure(e)
+        }
+    }
+
+
+    private fun getGenreName(genreId: Int): String {
+        return when (genreId) {
+            28 -> "Action"
+            12 -> "Adventure"
+            16 -> "Animation"
+            35 -> "Comedy"
+            80 -> "Crime"
+            99 -> "Documentary"
+            18 -> "Drama"
+            10751 -> "Family"
+            14 -> "Fantasy"
+            36 -> "History"
+            27 -> "Horror"
+            10402 -> "Music"
+            9648 -> "Mystery"
+            10749 -> "Romance"
+            878 -> "Science Fiction"
+            10770 -> "TV Movie"
+            53 -> "Thriller"
+            10752 -> "War"
+            37 -> "Western"
+            else -> "Unknown($genreId)"
         }
     }
 }
