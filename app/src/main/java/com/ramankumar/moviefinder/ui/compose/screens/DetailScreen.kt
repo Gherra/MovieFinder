@@ -5,7 +5,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
@@ -18,6 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.ramankumar.moviefinder.model.Video
+import com.ramankumar.moviefinder.ui.compose.components.TrailerItem
 import com.ramankumar.moviefinder.ui.compose.theme.Gold
 import com.ramankumar.moviefinder.ui.compose.theme.Red
 
@@ -31,8 +32,11 @@ fun DetailScreen(
     movieOverview: String,
     movieBackdrop: String?,
     initialIsFavorite: Boolean,
+    trailers: List<Video> = emptyList(),  // NEW
+    isLoadingTrailers: Boolean = false,    // NEW
     onBackClick: () -> Unit,
-    onFavoriteToggle: (Boolean) -> Unit
+    onFavoriteToggle: (Boolean) -> Unit,
+    onTrailerClick: (String, String) -> Unit = { _, _ -> }  // NEW: (videoKey, videoTitle)
 ) {
     var isFavorite by remember { mutableStateOf(initialIsFavorite) }
     val scrollState = rememberScrollState()
@@ -159,6 +163,56 @@ fun DetailScreen(
                     lineHeight = 24.sp,
                     color = Color(0xFFCCCCCC)
                 )
+
+                // NEW: Trailers Section
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Trailers Title
+                Text(
+                    text = "Trailers",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Loading State
+                if (isLoadingTrailers) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = Red
+                        )
+                    }
+                }
+                // Trailers List
+                else if (trailers.isNotEmpty()) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        trailers.take(5).forEach { trailer ->  // Show up to 5 trailers
+                            TrailerItem(
+                                trailer = trailer,
+                                onClick = {
+                                    onTrailerClick(trailer.key, trailer.name)
+                                }
+                            )
+                        }
+                    }
+                }
+                // No Trailers
+                else {
+                    Text(
+                        text = "No trailers available",
+                        fontSize = 14.sp,
+                        color = Color(0xFF888888)
+                    )
+                }
             }
         }
     }
