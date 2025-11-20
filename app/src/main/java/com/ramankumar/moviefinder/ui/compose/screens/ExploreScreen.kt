@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -25,10 +26,24 @@ fun ExploreScreen(
     onMovieClick: (Movie) -> Unit,
     onFavoriteClick: (Movie) -> Unit,
     onFilterChanged: (Int) -> Unit,
-    onRefresh: () -> Unit,
+    onRefresh: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var selectedFilter by remember { mutableIntStateOf(0) }
+
+    // Separate scroll states for each filter!
+    // Each filter maintains its own scroll position
+    val trendingScrollState = rememberLazyGridState()
+    val topRatedScrollState = rememberLazyGridState()
+    val recentScrollState = rememberLazyGridState()
+
+    // Determine which scroll state to use based on selected filter
+    val currentScrollState = when (selectedFilter) {
+        0 -> trendingScrollState
+        1 -> topRatedScrollState
+        2 -> recentScrollState
+        else -> trendingScrollState
+    }
 
     Column(
         modifier = modifier
@@ -112,10 +127,10 @@ fun ExploreScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Refresh Button (Simple alternative to pull-to-refresh)
+        // Refresh Button
         if (!isLoading && !isRefreshing) {
             TextButton(
-                onClick = onRefresh,
+                onClick = { onRefresh(selectedFilter) },
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
                 Text(
@@ -138,7 +153,7 @@ fun ExploreScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // Content
+
         Box(modifier = Modifier.fillMaxSize()) {
             when {
                 isLoading && movies.isEmpty() -> LoadingIndicator()
@@ -150,8 +165,10 @@ fun ExploreScreen(
                 )
 
                 else -> {
+
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
+                        state = currentScrollState,
                         contentPadding = PaddingValues(8.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
