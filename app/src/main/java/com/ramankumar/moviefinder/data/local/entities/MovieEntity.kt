@@ -14,7 +14,7 @@ data class MovieEntity(
     val overview: String,
     val releaseDate: String,
     val voteAverage: Double,
-    val genreIds: String,
+    val genreIds: List<Int>?,  // ← ADDED with TypeConverter support
     val popularity: Double,
     val originalLanguage: String,
     val isCached: Boolean = true,
@@ -30,11 +30,12 @@ fun MovieEntity.toMovie(): Movie {
         releaseDate = this.releaseDate,
         voteAverage = this.voteAverage,
         backdropPath = this.backdropPath,
+        genreIds = this.genreIds,  // ← ADDED
         isFavorite = false
     )
 }
 
-fun Movie.toEntity(genreIds: String = ""): MovieEntity {
+fun Movie.toEntity(): MovieEntity {
     return MovieEntity(
         id = this.id,
         title = this.title,
@@ -43,7 +44,7 @@ fun Movie.toEntity(genreIds: String = ""): MovieEntity {
         overview = this.overview,
         releaseDate = this.releaseDate,
         voteAverage = this.voteAverage,
-        genreIds = genreIds,
+        genreIds = this.genreIds,
         popularity = 0.0,
         originalLanguage = ""
     )
