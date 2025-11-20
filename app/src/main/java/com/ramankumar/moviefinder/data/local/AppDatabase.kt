@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.ramankumar.moviefinder.data.local.dao.FavoriteDao
 import com.ramankumar.moviefinder.data.local.dao.MovieDao
 import com.ramankumar.moviefinder.data.local.dao.SwipeHistoryDao
@@ -17,9 +18,10 @@ import com.ramankumar.moviefinder.data.local.entities.SwipeHistoryEntity
         SwipeHistoryEntity::class,
         FavoriteEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun movieDao(): MovieDao
