@@ -34,6 +34,13 @@
             android:name=".ui.detail.MovieDetailActivityCompose"
             android:exported="false" />
 
+        <activity
+            android:name=".ui.trailer.TrailerPlayerActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout"
+            android:supportsPictureInPicture="true"
+            android:theme="@style/Theme.MovieFinder"
+            android:exported="false" />
+
 
     </application>
 
