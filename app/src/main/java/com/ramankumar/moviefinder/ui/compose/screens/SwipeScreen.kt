@@ -150,16 +150,17 @@ fun SwipeScreen(
                             .padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        // Liked
+
+                        // Passed
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "${stats.liked}",
+                                text = "${stats.disliked}",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Gold
+                                color = Color(0xFF888888)
                             )
                             Text(
-                                text = "❤️ Liked",
+                                text = "👎 Passed",
                                 fontSize = 12.sp,
                                 color = Color(0xFF888888)
                             )
@@ -180,20 +181,21 @@ fun SwipeScreen(
                             )
                         }
 
-                        // Passed
+                        // Liked
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "${stats.disliked}",
+                                text = "${stats.liked}",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF888888)
+                                color = Gold
                             )
                             Text(
-                                text = "👎 Passed",
+                                text = "❤️ Liked",
                                 fontSize = 12.sp,
                                 color = Color(0xFF888888)
                             )
                         }
+
                     }
                 }
             }
