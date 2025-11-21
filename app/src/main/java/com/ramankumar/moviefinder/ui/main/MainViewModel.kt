@@ -31,6 +31,8 @@ class MainViewModel(
 
     private val _currentFilter = MutableStateFlow(0)
 
+    private val _isFirstSearch = MutableStateFlow(true)
+    val isFirstSearch: StateFlow<Boolean> = _isFirstSearch.asStateFlow()
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -165,6 +167,7 @@ class MainViewModel(
             _isLoading.value = true
             _error.value = null
 
+
             repository.searchMovies(query)
                 .onSuccess { movieList ->
                     _searchResults.value = movieList
@@ -178,6 +181,7 @@ class MainViewModel(
                 }
 
             _isLoading.value = false
+            _isFirstSearch.value = false
         }
     }
 

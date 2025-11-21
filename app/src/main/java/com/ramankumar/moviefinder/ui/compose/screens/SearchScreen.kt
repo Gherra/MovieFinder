@@ -29,6 +29,7 @@ fun SearchScreen(
     onSearchQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     movies: List<Movie>,
+    isFirstSearch: Boolean,
     isLoading: Boolean,
     onMovieClick: (Movie) -> Unit,
     onFavoriteClick: (Movie) -> Unit,
@@ -92,17 +93,12 @@ fun SearchScreen(
             when {
                 isLoading -> LoadingIndicator()
 
-                searchQuery.isEmpty() -> EmptyState(
+                searchQuery.isEmpty() && isFirstSearch -> EmptyState(
                     emoji = "🔍",
                     title = "Search for Movies",
                     message = "Enter a movie title to start searching"
                 )
 
-                movies.isEmpty() -> EmptyState(
-                    emoji = "😕",
-                    title = "No Results Found",
-                    message = "Try searching for something else"
-                )
 
                 else -> {
                     LazyVerticalGrid(

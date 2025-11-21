@@ -70,6 +70,7 @@ fun MainScreen(
     val movies by viewModel.movies.collectAsStateWithLifecycle()
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
+    val isFirstSearch by viewModel.isFirstSearch.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
@@ -185,6 +186,7 @@ fun MainScreen(
                         }
                     },
                     movies = movies,
+                    isFirstSearch = isFirstSearch,
                     isLoading = isLoading,
                     onMovieClick = onMovieClick,
                     onFavoriteClick = { movie ->
