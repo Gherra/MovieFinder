@@ -4,6 +4,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,6 +40,7 @@ fun SwipeScreen(
     val error by viewModel.error.collectAsState()
     val swipeStats by viewModel.swipeStats.collectAsState()
     val showResetDialog by viewModel.showResetDialog.collectAsState()
+    val showInfoDialog by viewModel.showInfoDialog.collectAsState()
 
     val currentMovie = movies.getOrNull(currentIndex)
 
@@ -79,6 +81,26 @@ fun SwipeScreen(
             textContentColor = Color(0xFFCCCCCC)
         )
     }
+    if (showInfoDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.hideInfoDialog()},
+            title = { Text("Swipe Details:")},
+            text = { Text("⬆\uFE0F Swipe up if you're not sure\n➡\uFE0F Swipe right to like \n⬅\uFE0F Swipe left to pass")},
+            confirmButton = {
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { viewModel.hideInfoDialog() },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Red)
+                ) {
+                    Text("Finished")
+                }
+            },
+            containerColor = Color(0xFF1F1F1F),
+            titleContentColor = Color.White,
+            textContentColor = Color(0xFFCCCCCC)
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -90,6 +112,13 @@ fun SwipeScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { viewModel.showInfoDialog()}) {
+                        Icon(
+                            Icons.Filled.Info,
+                            contentDescription = "Info",
+                            tint = Red
+                        )
+                    }
                     // Reset history button
                     IconButton(onClick = { viewModel.showResetDialog() }) {
                         Icon(
@@ -173,29 +202,6 @@ fun SwipeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Background instruction text
-            Column(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "⬆️ Swipe up if you're not sure",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFF444444)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "➡️ Swipe right to like",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFF444444)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "⬅️ Swipe left to pass",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFF444444)
-                )
-            }
 
             when {
                 isLoading -> LoadingIndicator()

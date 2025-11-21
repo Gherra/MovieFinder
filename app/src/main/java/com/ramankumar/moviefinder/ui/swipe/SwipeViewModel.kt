@@ -34,6 +34,9 @@ class SwipeViewModel(
     private val _showResetDialog = MutableStateFlow(false)
     val showResetDialog: StateFlow<Boolean> = _showResetDialog.asStateFlow()
 
+    private val _showInfoDialog = MutableStateFlow(false)
+    val showInfoDialog: StateFlow<Boolean> = _showInfoDialog.asStateFlow()
+
     init {
         loadMovies()
         loadSwipeStats()
@@ -108,6 +111,14 @@ class SwipeViewModel(
 
     fun hideResetDialog() {
         _showResetDialog.value = false
+    }
+
+    fun showInfoDialog() {
+        _showInfoDialog.value = true
+    }
+
+    fun hideInfoDialog() {
+        _showInfoDialog.value = false
     }
 
     fun resetSwipeHistory() {
