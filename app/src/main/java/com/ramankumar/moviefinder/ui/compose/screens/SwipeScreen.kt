@@ -2,6 +2,8 @@ package com.ramankumar.moviefinder.ui.compose.screens
 
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
@@ -83,9 +85,9 @@ fun SwipeScreen(
     }
     if (showInfoDialog) {
         AlertDialog(
-            onDismissRequest = { viewModel.hideInfoDialog()},
-            title = { Text("Swipe Details:")},
-            text = { Text("⬆\uFE0F Swipe up if you're not sure\n➡\uFE0F Swipe right to like \n⬅\uFE0F Swipe left to pass")},
+            onDismissRequest = { viewModel.hideInfoDialog() },
+            title = { Text("Swipe Details:") },
+            text = { Text("⬆\uFE0F Swipe up if you're not sure\n➡\uFE0F Swipe right to like \n⬅\uFE0F Swipe left to pass") },
             confirmButton = {
             },
             dismissButton = {
@@ -112,7 +114,7 @@ fun SwipeScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.showInfoDialog()}) {
+                    IconButton(onClick = { viewModel.showInfoDialog() }) {
                         Icon(
                             Icons.Filled.Info,
                             contentDescription = "Info",
@@ -411,7 +413,7 @@ fun SwipeCard(
                         text = movie.overview,
                         color = Color(0xFFCCCCCC),
                         style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 4
+                        modifier = Modifier.verticalScroll(rememberScrollState())
                     )
                 }
             }
