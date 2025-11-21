@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ramankumar.moviefinder.model.Movie
@@ -48,14 +49,16 @@ fun MovieCard(
 
             // Movie Info
             Column(
-                modifier = Modifier.padding(12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
             ) {
                 // Title
                 Text(
+                    modifier = Modifier.padding(horizontal = 12.dp).padding(top = 8.dp),
                     text = movie.title,
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
@@ -63,7 +66,9 @@ fun MovieCard(
 
                 // Year and Rating
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -80,7 +85,6 @@ fun MovieCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
 
                 // Favorite Button
                 IconButton(
@@ -92,10 +96,12 @@ fun MovieCard(
                             Icons.Filled.Star
                         else
                             Icons.Outlined.StarOutline,
+
                         contentDescription = if (movie.isFavorite)
                             "Remove from favorites"
                         else
                             "Add to favorites",
+
                         tint = if (movie.isFavorite) Gold else Red
                     )
                 }
