@@ -93,7 +93,7 @@ fun SwipeScreen(
                     onClick = { viewModel.hideInfoDialog() },
                     colors = ButtonDefaults.textButtonColors(contentColor = Red)
                 ) {
-                    Text("Okay")
+                    Text("Ok")
                 }
             },
             containerColor = Color(0xFF1F1F1F),
