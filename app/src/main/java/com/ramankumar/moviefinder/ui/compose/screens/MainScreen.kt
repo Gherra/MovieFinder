@@ -19,7 +19,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ramankumar.moviefinder.model.Movie
 import com.ramankumar.moviefinder.ui.compose.navigation.Screen
+import com.ramankumar.moviefinder.ui.compose.theme.DarkBackground
+import com.ramankumar.moviefinder.ui.compose.theme.DarkSurface
 import com.ramankumar.moviefinder.ui.compose.theme.Red
+import com.ramankumar.moviefinder.ui.compose.theme.TextGray
 import com.ramankumar.moviefinder.ui.main.MainViewModel
 
 sealed class BottomNavItem(
@@ -92,17 +95,21 @@ fun MainScreen(
                 title = {
                     Text(
                         "MovieFinder",
-                        color = Color.White
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleLarge
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1F1F1F)
+                    containerColor = DarkSurface,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
                 )
             )
         },
         bottomBar = {
             NavigationBar(
-                containerColor = Color(0xFF1F1F1F),
+                containerColor = DarkSurface,
                 contentColor = Color.White
             ) {
                 bottomNavItems.forEach { item ->
@@ -138,15 +145,15 @@ fun MainScreen(
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Red,
                             selectedTextColor = Red,
-                            unselectedIconColor = Color(0xFF888888),
-                            unselectedTextColor = Color(0xFF888888),
-                            indicatorColor = Color(0xFF2C2C2C)
+                            unselectedIconColor = TextGray,
+                            unselectedTextColor = TextGray,
+                            indicatorColor = DarkBackground
                         )
                     )
                 }
             }
         },
-        containerColor = Color.Black
+        containerColor = DarkBackground
     ) { paddingValues ->
         when (selectedRoute) {
             Screen.Explore.route -> {

@@ -13,30 +13,32 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.ramankumar.moviefinder.model.Video
 import com.ramankumar.moviefinder.ui.compose.components.TrailerItem
+import com.ramankumar.moviefinder.ui.compose.theme.DarkBackground
+import com.ramankumar.moviefinder.ui.compose.theme.DarkSurface
 import com.ramankumar.moviefinder.ui.compose.theme.Gold
 import com.ramankumar.moviefinder.ui.compose.theme.Red
+import com.ramankumar.moviefinder.ui.compose.theme.TextGray
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
-    movieId: Int,
     movieTitle: String,
     movieYear: String,
     movieRating: Double,
     movieOverview: String,
     movieBackdrop: String?,
     initialIsFavorite: Boolean,
-    trailers: List<Video> = emptyList(),  // NEW
-    isLoadingTrailers: Boolean = false,    // NEW
+    trailers: List<Video> = emptyList(),
+    isLoadingTrailers: Boolean = false,
     onBackClick: () -> Unit,
     onFavoriteToggle: (Boolean) -> Unit,
-    onTrailerClick: (String, String) -> Unit = { _, _ -> }  // NEW: (videoKey, videoTitle)
+    onTrailerClick: (String, String) -> Unit
 ) {
     var isFavorite by remember { mutableStateOf(initialIsFavorite) }
     val scrollState = rememberScrollState()
@@ -44,20 +46,20 @@ fun DetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Movie Details") },
+                title = { Text(movieTitle, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1F1F1F),
+                    containerColor = DarkSurface,
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White
                 )
             )
         },
-        containerColor = Color.Black
+        containerColor = DarkBackground
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -65,7 +67,6 @@ fun DetailScreen(
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
         ) {
-
             if (movieBackdrop != null) {
                 AsyncImage(
                     model = "https://image.tmdb.org/t/p/w780$movieBackdrop",
@@ -77,23 +78,19 @@ fun DetailScreen(
                 )
             }
 
-            // Movie Info Section
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(20.dp)
             ) {
-                // Title
                 Text(
                     text = movieTitle,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineLarge,
                     color = Color.White
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Year and Rating Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -101,21 +98,19 @@ fun DetailScreen(
                 ) {
                     Text(
                         text = movieYear,
-                        fontSize = 18.sp,
-                        color = Color(0xFF888888)
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextGray
                     )
 
                     Text(
                         text = "⭐ %.1f/10".format(java.util.Locale.US, movieRating),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Gold
                     )
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Favorite Button
                 Button(
                     onClick = {
                         isFavorite = !isFavorite
@@ -146,38 +141,30 @@ fun DetailScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Overview Title
                 Text(
                     text = "Overview",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge,
                     color = Color.White
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Overview Text
                 Text(
                     text = movieOverview,
-                    fontSize = 16.sp,
-                    lineHeight = 24.sp,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = Color(0xFFCCCCCC)
                 )
 
-                // NEW: Trailers Section
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Trailers Title
                 Text(
                     text = "Trailers",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge,
                     color = Color.White
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Loading State
                 if (isLoadingTrailers) {
                     Box(
                         modifier = Modifier
@@ -185,32 +172,24 @@ fun DetailScreen(
                             .height(100.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(
-                            color = Red
-                        )
+                        CircularProgressIndicator(color = Red)
                     }
-                }
-                // Trailers List
-                else if (trailers.isNotEmpty()) {
+                } else if (trailers.isNotEmpty()) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        trailers.take(5).forEach { trailer ->  // Show up to 5 trailers
+                        trailers.take(5).forEach { trailer ->
                             TrailerItem(
                                 trailer = trailer,
-                                onClick = {
-                                    onTrailerClick(trailer.key, trailer.name)
-                                }
+                                onClick = { onTrailerClick(trailer.key, trailer.name) }
                             )
                         }
                     }
-                }
-                // No Trailers
-                else {
+                } else {
                     Text(
                         text = "No trailers available",
-                        fontSize = 14.sp,
-                        color = Color(0xFF888888)
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextGray
                     )
                 }
             }

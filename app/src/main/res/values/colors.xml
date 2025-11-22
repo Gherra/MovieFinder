@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Core palette -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Netflix-style brand colors (aligned with Compose theme) -->
+    <color name="nf_red">#E50914</color>
+    <color name="nf_dark_background">#FF000000</color>
+    <color name="nf_dark_surface">#FF1F1F1F</color>
+    <color name="nf_dark_gray">#FF2C2C2C</color>
+    <color name="nf_text_gray">#FF888888</color>
+    <color name="nf_gold">#FFFFD700</color>
+
+    <!-- Explicit black for status/navigation bars -->
+    <color name="nf_black">#FF000000</color>
 </resources>

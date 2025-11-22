@@ -9,12 +9,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ramankumar.moviefinder.model.Movie
 import com.ramankumar.moviefinder.ui.compose.components.EmptyState
 import com.ramankumar.moviefinder.ui.compose.components.MovieCard
+import com.ramankumar.moviefinder.ui.compose.theme.TextGray
 
 @Composable
 fun FavoritesScreen(
@@ -31,9 +30,17 @@ fun FavoritesScreen(
         // Title
         Text(
             text = "Your Favorites",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleLarge,
             color = Color.White,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = "All the stories you love in one place",
+            style = MaterialTheme.typography.bodyMedium,
+            color = TextGray,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 

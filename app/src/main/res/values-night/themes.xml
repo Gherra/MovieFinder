@@ -1,7 +1,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- Base application theme. Explicitly tune the dark palette for night mode -->
     <style name="Base.Theme.MovieFinder" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimary">@color/nf_red</item>
+        <item name="colorPrimaryContainer">@color/nf_dark_surface</item>
+        <item name="colorSecondary">@color/nf_gold</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="android:windowBackground">@color/nf_dark_background</item>
     </style>
 </resources>

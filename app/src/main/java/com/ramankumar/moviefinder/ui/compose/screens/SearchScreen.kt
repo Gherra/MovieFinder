@@ -20,7 +20,9 @@ import com.ramankumar.moviefinder.model.Movie
 import com.ramankumar.moviefinder.ui.compose.components.EmptyState
 import com.ramankumar.moviefinder.ui.compose.components.LoadingIndicator
 import com.ramankumar.moviefinder.ui.compose.components.MovieCard
+import com.ramankumar.moviefinder.ui.compose.theme.DarkSurface
 import com.ramankumar.moviefinder.ui.compose.theme.Red
+import com.ramankumar.moviefinder.ui.compose.theme.TextGray
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,12 +42,21 @@ fun SearchScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // Search Title
+        Text(
+            text = "Search",
+            style = MaterialTheme.typography.titleLarge,
+            color = Color.White
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         // Search Bar
         TextField(
             value = searchQuery,
             onValueChange = onSearchQueryChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search movies...") },
+            placeholder = { Text("Search movies...", color = TextGray) },
             leadingIcon = {
                 Icon(
                     Icons.Filled.Search,
@@ -59,24 +70,19 @@ fun SearchScreen(
                         Icon(
                             Icons.Filled.Close,
                             contentDescription = "Clear",
-                            tint = Color(0xFF888888)
+                            tint = TextGray
                         )
                     }
                 }
             },
             colors = TextFieldDefaults.colors(
-                // container color now per state
-                focusedContainerColor = Color(0xFF1F1F1F),
-                unfocusedContainerColor = Color(0xFF1F1F1F),
-                disabledContainerColor = Color(0xFF1F1F1F),
-                errorContainerColor = Color(0xFF1F1F1F),
-
-                // text & cursor
+                focusedContainerColor = DarkSurface,
+                unfocusedContainerColor = DarkSurface,
+                disabledContainerColor = DarkSurface,
+                errorContainerColor = DarkSurface,
                 focusedTextColor = Color.White,
                 unfocusedTextColor = Color.White,
                 cursorColor = Red,
-
-                // indicators (underline on TextField)
                 focusedIndicatorColor = Red,
                 unfocusedIndicatorColor = Color.Transparent
             ),

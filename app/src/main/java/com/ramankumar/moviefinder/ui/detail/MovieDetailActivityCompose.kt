@@ -61,7 +61,6 @@ class MovieDetailActivityCompose : ComponentActivity() {
                 val isLoadingTrailers = trailerViewModel.isLoading.collectAsStateWithLifecycle().value
 
                 DetailScreen(
-                    movieId = movieId,
                     movieTitle = movieTitle,
                     movieYear = movieYear,
                     movieRating = movieRating,

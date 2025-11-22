@@ -16,7 +16,9 @@ import com.ramankumar.moviefinder.model.Movie
 import com.ramankumar.moviefinder.ui.compose.components.EmptyState
 import com.ramankumar.moviefinder.ui.compose.components.LoadingIndicator
 import com.ramankumar.moviefinder.ui.compose.components.MovieCard
+import com.ramankumar.moviefinder.ui.compose.theme.DarkSurface
 import com.ramankumar.moviefinder.ui.compose.theme.Red
+import com.ramankumar.moviefinder.ui.compose.theme.TextGray
 
 @Composable
 fun ExploreScreen(
@@ -66,7 +68,7 @@ fun ExploreScreen(
             Text(
                 text = "Discover your next favorite film",
                 fontSize = 14.sp,
-                color = Color(0xFF888888)
+                color = TextGray
             )
         }
 
@@ -89,8 +91,8 @@ fun ExploreScreen(
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Red,
                     selectedLabelColor = Color.White,
-                    containerColor = Color(0xFF1F1F1F),
-                    labelColor = Color(0xFF888888)
+                    containerColor = DarkSurface,
+                    labelColor = TextGray
                 )
             )
 
@@ -104,8 +106,8 @@ fun ExploreScreen(
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Red,
                     selectedLabelColor = Color.White,
-                    containerColor = Color(0xFF1F1F1F),
-                    labelColor = Color(0xFF888888)
+                    containerColor = DarkSurface,
+                    labelColor = TextGray
                 )
             )
 
@@ -119,8 +121,8 @@ fun ExploreScreen(
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Red,
                     selectedLabelColor = Color.White,
-                    containerColor = Color(0xFF1F1F1F),
-                    labelColor = Color(0xFF888888)
+                    containerColor = DarkSurface,
+                    labelColor = TextGray
                 )
             )
         }

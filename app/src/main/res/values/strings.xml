@@ -3,4 +3,10 @@
     <string name="rating_format">⭐ %.1f</string>
     <string name="liked_movie">❤️ Liked: %s</string>
     <string name="passed_movie">👎 Passed: %s</string>
+
+    <!-- Detail screen strings -->
+    <string name="added_to_favorites">Added to favorites</string>
+    <string name="removed_from_favorites">Removed from favorites</string>
+    <string name="add_to_favorites">Add to Favorites</string>
+    <string name="remove_from_favorites">Remove from Favorites</string>
 </resources>
