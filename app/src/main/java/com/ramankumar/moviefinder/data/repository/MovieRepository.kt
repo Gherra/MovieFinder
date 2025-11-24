@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import com.ramankumar.moviefinder.model.Video
+import kotlin.text.forEach
+import kotlin.text.orEmpty
 
 class MovieRepository(
     private val movieDao: MovieDao,
@@ -63,6 +65,29 @@ class MovieRepository(
             }
         } catch (e: Exception) {
             android.util.Log.e("MovieRepository", "getPopularMovies: Error - ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getTrendingMovies(
+        startPage: Int = 1,
+        pageCount: Int = 5,
+        forceRefresh: Boolean = false
+    ): Result<List<Movie>> {
+        return try {
+            val collected = mutableListOf<Movie>()
+            for (page in startPage until (startPage + pageCount)) {
+                val resp = api.getTrendingMovies(apiKey, page)
+                if (!resp.isSuccessful) {
+                    return Result.failure(IllegalStateException("Trending failed code=${resp.code()}"))
+                }
+                val results = resp.body()?.results.orEmpty()
+                collected += results
+                // Optional cache
+                results.forEach { movieDao.insertMovie(it.toEntity()) }
+            }
+            Result.success(collected.distinctBy { it.id })
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }

@@ -160,16 +160,16 @@ fun MainScreen(
                     },
                     onFilterChanged = { filterIndex ->
                         when (filterIndex) {
-                            0 -> viewModel.loadPopularMovies() // Trending
+                            0 -> viewModel.loadTrendingMovies() // Trending
                             1 -> viewModel.loadTopRatedMovies() // Top Rated
                             2 -> viewModel.loadNowPlayingMovies() // Recent
                         }
                     },
                     onRefresh = { filterIndex ->  // ← RECEIVE FILTER INDEX
                         when (filterIndex) {
-                            0 -> viewModel.loadPopularMovies(refresh = true)
-                            1 -> viewModel.loadTopRatedMovies()
-                            2 -> viewModel.loadNowPlayingMovies()
+                            0 -> viewModel.loadTrendingMovies(refresh = true)
+                            1 -> viewModel.loadTopRatedMovies(refresh = true)
+                            2 -> viewModel.loadNowPlayingMovies(refresh = true)
                         }
                     },
                     modifier = Modifier.padding(paddingValues)

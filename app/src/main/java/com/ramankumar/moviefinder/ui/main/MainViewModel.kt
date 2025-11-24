@@ -15,6 +15,7 @@ class MainViewModel(
 
     // SEPARATE STATES FOR EACH FILTER
     private val _popularMovies = MutableStateFlow<List<Movie>>(emptyList())
+    private val _trendingMovies = MutableStateFlow<List<Movie>>(emptyList())
     private val _topRatedMovies = MutableStateFlow<List<Movie>>(emptyList())
     private val _nowPlayingMovies = MutableStateFlow<List<Movie>>(emptyList())
     private val _searchResults = MutableStateFlow<List<Movie>>(emptyList())
@@ -51,7 +52,7 @@ class MainViewModel(
     val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
 
     init {
-        loadPopularMovies()
+        loadTrendingMovies()
         observeFavorites()
     }
 
@@ -91,6 +92,23 @@ class MainViewModel(
         }
     }
 
+    fun loadTrendingMovies(refresh: Boolean = false) {
+        viewModelScope.launch {
+            if (refresh) _isRefreshing.value = true else _isLoading.value = true
+            _error.value = null
+            _currentFilter.value = 0
+
+            repository.getTrendingMovies(forceRefresh = refresh)
+                .onSuccess {
+                    _trendingMovies.value = it
+                    if (_currentFilter.value == 0) _movies.value = it
+                }
+                .onFailure { _error.value = it.message }
+
+            _isLoading.value = false
+            _isRefreshing.value = false
+        }
+    }
     fun loadTopRatedMovies(refresh: Boolean = false) {
         viewModelScope.launch {
             if (refresh) {
@@ -130,7 +148,7 @@ class MainViewModel(
                 _isLoading.value = true
             }
             _error.value = null
-            _currentFilter.value = 2
+            _currentFilter.value = 2  // 2 = Recent / Now Playing
 
             android.util.Log.d("MainViewModel", "loadNowPlayingMovies: Starting (refresh=$refresh)")
 
@@ -138,8 +156,9 @@ class MainViewModel(
                 .onSuccess { movieList ->
                     android.util.Log.d("MainViewModel", "loadNowPlayingMovies: SUCCESS - ${movieList.size} movies")
                     _nowPlayingMovies.value = movieList
-                    // Only update displayed movies if user is still on Recent filter
-                    if (_currentFilter.value == 2) {
+
+                    // Only show now playing if Explore + Recent are selected
+                    if (_currentTab.value == 0 && _currentFilter.value == 2) {
                         _movies.value = movieList
                     }
                 }
@@ -237,14 +256,20 @@ class MainViewModel(
             0 -> {
 
                 _movies.value = when (_currentFilter.value) {
-                    0 -> _popularMovies.value
+                    0 -> _trendingMovies.value
                     1 -> _topRatedMovies.value
                     2 -> _nowPlayingMovies.value
-                    else -> _popularMovies.value
+                    else -> _trendingMovies.value
                 }
 
-                if (_popularMovies.value.isEmpty()) {
-                    loadPopularMovies()
+                if (_trendingMovies.value.isEmpty()) {
+                    loadTrendingMovies()
+                }
+                if (_topRatedMovies.value.isEmpty()) {
+                    loadTopRatedMovies()
+                }
+                if (_nowPlayingMovies.value.isEmpty()) {
+                    loadNowPlayingMovies()
                 }
             }
             1 -> {
@@ -261,10 +286,10 @@ class MainViewModel(
     fun getCurrentMovies(): List<Movie> {
         return when (_currentTab.value) {
             0 -> when (_currentFilter.value) {
-                0 -> _popularMovies.value
+                0 -> _trendingMovies.value
                 1 -> _topRatedMovies.value
                 2 -> _nowPlayingMovies.value
-                else -> _popularMovies.value
+                else -> _trendingMovies.value
             }
             1 -> _searchResults.value
             2 -> _favorites.value
