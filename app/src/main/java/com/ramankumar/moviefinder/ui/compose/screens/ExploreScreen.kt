@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -17,7 +18,12 @@ import com.ramankumar.moviefinder.ui.compose.components.EmptyState
 import com.ramankumar.moviefinder.ui.compose.components.LoadingIndicator
 import com.ramankumar.moviefinder.ui.compose.components.MovieCard
 import com.ramankumar.moviefinder.ui.compose.theme.Red
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material.ExperimentalMaterialApi
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ExploreScreen(
     movies: List<Movie>,
@@ -32,7 +38,6 @@ fun ExploreScreen(
     var selectedFilter by remember { mutableIntStateOf(0) }
 
     // Separate scroll states for each filter!
-    // Each filter maintains its own scroll position
     val trendingScrollState = rememberLazyGridState()
     val topRatedScrollState = rememberLazyGridState()
     val recentScrollState = rememberLazyGridState()
@@ -45,24 +50,26 @@ fun ExploreScreen(
         else -> trendingScrollState
     }
 
+    // Pull-to-refresh state
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = { onRefresh(selectedFilter) }
+    )
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(top = 16.dp)
     ) {
         // Title Section
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp)
-        ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Text(
                 text = "Explore Movies",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
-
             Spacer(modifier = Modifier.height(4.dp))
-
             Text(
                 text = "Discover your next favorite film",
                 fontSize = 14.sp,
@@ -93,7 +100,6 @@ fun ExploreScreen(
                     labelColor = Color(0xFF888888)
                 )
             )
-
             FilterChip(
                 selected = selectedFilter == 1,
                 onClick = {
@@ -108,7 +114,6 @@ fun ExploreScreen(
                     labelColor = Color(0xFF888888)
                 )
             )
-
             FilterChip(
                 selected = selectedFilter == 2,
                 onClick = {
@@ -125,64 +130,45 @@ fun ExploreScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Refresh Button
-        if (!isLoading && !isRefreshing) {
-            TextButton(
-                onClick = { onRefresh(selectedFilter) },
-                modifier = Modifier.padding(horizontal = 16.dp)
-            ) {
-                Text(
-                    text = "🔄 Refresh Movies",
-                    color = Red,
-                    fontSize = 14.sp
-                )
-            }
-        }
-
-        // Loading indicator for refresh
-        if (isRefreshing) {
-            LinearProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                color = Red,
-                trackColor = Color(0xFF2C2C2C)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-
-        Box(modifier = Modifier.fillMaxSize()) {
+        // Movies Grid with Pull-to-Refresh
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pullRefresh(pullRefreshState)
+        ) {
             when {
                 isLoading && movies.isEmpty() -> LoadingIndicator()
-
                 movies.isEmpty() -> EmptyState(
                     emoji = "🎬",
                     title = "No Movies Found",
-                    message = "Tap refresh button or check your connection"
+                    message = "Pull to refresh or check your connection"
                 )
-
-                else -> {
-
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        state = currentScrollState,
-                        contentPadding = PaddingValues(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(movies) { movie ->
-                            MovieCard(
-                                movie = movie,
-                                onMovieClick = { onMovieClick(movie) },
-                                onFavoriteClick = { onFavoriteClick(movie) }
-                            )
-                        }
+                else -> LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    state = currentScrollState,
+                    contentPadding = PaddingValues(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(movies) { movie ->
+                        MovieCard(
+                            movie = movie,
+                            onMovieClick = { onMovieClick(movie) },
+                            onFavoriteClick = { onFavoriteClick(movie) }
+                        )
                     }
                 }
             }
+
+            PullRefreshIndicator(
+                refreshing = isRefreshing,
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                backgroundColor = Color(0xFF2C2C2C),
+                contentColor = Red
+            )
         }
     }
 }

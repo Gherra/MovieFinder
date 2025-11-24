@@ -118,7 +118,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-
+    // Pull to Refresh
+    implementation("androidx.compose.material:material")
 
     implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:13.0.0")
 
