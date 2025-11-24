@@ -200,6 +200,7 @@ fun MainScreen(
                 RecommendationsScreen(
                     movies = recommendations,
                     isLoading = isLoading,
+                    isRefreshing = isRefreshing, // <-- Added
                     error = error,
                     onMovieClick = onMovieClick,
                     onFavoriteClick = { movie ->

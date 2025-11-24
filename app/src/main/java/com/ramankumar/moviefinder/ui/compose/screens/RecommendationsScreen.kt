@@ -1,9 +1,15 @@
+@file:OptIn(ExperimentalMaterialApi::class)
+
 package com.ramankumar.moviefinder.ui.compose.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,12 +30,19 @@ import com.ramankumar.moviefinder.ui.compose.theme.Red
 fun RecommendationsScreen(
     movies: List<Movie>,
     isLoading: Boolean,
+    isRefreshing: Boolean,
     error: String?,
     onMovieClick: (Movie) -> Unit,
     onFavoriteClick: (Movie) -> Unit,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Pull-to-refresh state
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = onRefresh
+    )
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -57,25 +70,17 @@ fun RecommendationsScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Refresh Button
-        if (!isLoading && movies.isNotEmpty()) {
-            TextButton(
-                onClick = onRefresh,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            ) {
-                Text(
-                    text = "🔄 Refresh Recommendations",
-                    color = Red,
-                    fontSize = 14.sp
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-        }
+        // Refresh Pull Down
+
 
         // Content
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pullRefresh(pullRefreshState)
+        ) {
             when {
-                isLoading -> LoadingIndicator()
+                isLoading && movies.isEmpty() -> LoadingIndicator()
 
                 error != null -> {
                     // Not enough swipe data
@@ -120,7 +125,7 @@ fun RecommendationsScreen(
                     }
                 }
 
-                movies.isEmpty() -> EmptyState(
+                !isLoading && movies.isEmpty() -> EmptyState(
                     emoji = "🤔",
                     title = "No Recommendations Yet",
                     message = "Swipe on more movies to get personalized suggestions"
@@ -180,6 +185,14 @@ fun RecommendationsScreen(
                     }
                 }
             }
+
+            PullRefreshIndicator(
+                refreshing = isRefreshing,
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                backgroundColor = Color(0xFF2C2C2C),
+                contentColor = Red
+            )
         }
     }
 }
