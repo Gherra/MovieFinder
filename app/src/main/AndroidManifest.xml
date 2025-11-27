@@ -19,7 +19,8 @@
 
         <activity
             android:name=".ui.main.MainActivityCompose"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -28,11 +29,13 @@
 
         <activity
             android:name=".ui.swipe.SwipeActivityCompose"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait"/>
 
         <activity
             android:name=".ui.detail.MovieDetailActivityCompose"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait"/>
 
         <activity
             android:name=".ui.trailer.TrailerPlayerActivity"
