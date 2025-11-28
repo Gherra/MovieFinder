@@ -26,49 +26,6 @@ class MovieRepository(
 
     // PAGINATION SUPPORT
 
-    /**
-     * Fetches multiple pages of popular movies for pagination
-     * @param startPage Starting page number (default 1)
-     * @param pageCount Number of pages to fetch (default 5 = ~100 movies)
-     * @param forceRefresh Whether to bypass cache and fetch fresh data
-     */
-    suspend fun getPopularMovies(
-        startPage: Int = 1,
-        pageCount: Int = 5,
-        forceRefresh: Boolean = false
-    ): Result<List<Movie>> {
-        return try {
-            if (forceRefresh || movieDao.getMovieCount() == 0) {
-                // Fetch multiple pages from API
-                val allMovies = mutableListOf<Movie>()
-
-                for (page in startPage until startPage + pageCount) {
-                    val response = api.getPopularMovies(apiKey, page = page)
-                    val movies = response.body()?.results ?: emptyList()
-                    allMovies.addAll(movies)
-                    android.util.Log.d("MovieRepository", "getPopularMovies: Fetched page $page with ${movies.size} movies")
-                }
-
-                // Cache in database (only if startPage == 1 to avoid duplicates)
-                if (startPage == 1) {
-                    movieDao.deleteAllMovies()
-                    movieDao.insertMovies(allMovies.map { it.toEntity() })
-                }
-
-                android.util.Log.d("MovieRepository", "getPopularMovies: Total movies fetched = ${allMovies.size}")
-                Result.success(allMovies)
-            } else {
-                // Return from cache
-                val cachedEntities = movieDao.getAllMovies()
-                val cachedMovies = cachedEntities.map { it.toMovie() }
-                Result.success(cachedMovies)
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("MovieRepository", "getPopularMovies: Error - ${e.message}", e)
-            Result.failure(e)
-        }
-    }
-
     suspend fun getTrendingMovies(
         startPage: Int = 1,
         pageCount: Int = 5,
@@ -90,13 +47,6 @@ class MovieRepository(
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
-
-    /**
-     * Loads more pages for infinite scroll
-     */
-    suspend fun loadMorePopularMovies(currentPage: Int): Result<List<Movie>> {
-        return getPopularMovies(startPage = currentPage, pageCount = 3, forceRefresh = true)
     }
 
     suspend fun getTopRatedMovies(
@@ -241,6 +191,8 @@ class MovieRepository(
     }
 
     //  FAVORITES
+
+//    fun checkMovieCached(): Flow<>
 
     fun getLikedMovies(): Flow<List<SwipeHistoryEntity>> {
         return swipeHistoryDao.getLikedMovies()

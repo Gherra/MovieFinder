@@ -56,42 +56,6 @@ class MainViewModel(
         observeFavorites()
     }
 
-    fun loadPopularMovies(refresh: Boolean = false) {
-        viewModelScope.launch {
-            if (refresh) {
-                _isRefreshing.value = true
-                _currentPage.value = 1
-            } else {
-                _isLoading.value = true
-            }
-            _error.value = null
-            _currentFilter.value = 0
-
-            android.util.Log.d("MainViewModel", "loadPopularMovies: Starting (refresh=$refresh)")
-
-            repository.getPopularMovies(
-                startPage = 1,
-                pageCount = 5,
-                forceRefresh = refresh
-            )
-                .onSuccess { movieList ->
-                    android.util.Log.d("MainViewModel", "loadPopularMovies: SUCCESS - ${movieList.size} movies")
-                    _popularMovies.value = movieList
-                    // Only update displayed movies if user is still on Trending filter
-                    if (_currentFilter.value == 0) {
-                        _movies.value = movieList
-                    }
-                }
-                .onFailure { exception ->
-                    android.util.Log.e("MainViewModel", "loadPopularMovies: FAILURE - ${exception.message}")
-                    _error.value = exception.message ?: "Failed to load movies"
-                }
-
-            _isLoading.value = false
-            _isRefreshing.value = false
-        }
-    }
-
     fun loadTrendingMovies(refresh: Boolean = false) {
         viewModelScope.launch {
             if (refresh) _isRefreshing.value = true else _isLoading.value = true
@@ -217,7 +181,15 @@ class MainViewModel(
     }
 
     fun toggleFavorite(movieId: Int) {
+
+
         viewModelScope.launch {
+            // Since favourite only display cached movies we must make sure that toggled movies are cached
+            // Patch-fix
+
+            // check movies for movieId
+
+
             val newStatus = repository.toggleFavorite(movieId)
 
             // Update the movie in ALL lists

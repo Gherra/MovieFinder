@@ -35,7 +35,7 @@ class MainActivityCompose : ComponentActivity() {
     ) { result ->
         if (result.resultCode == RESULT_OK) {
             // Refresh movies after returning from detail
-            viewModel.loadPopularMovies()
+            viewModel.loadTrendingMovies()
         }
     }
 
