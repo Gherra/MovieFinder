@@ -126,7 +126,7 @@ fun ExploreScreen(
                     selectedFilter = 2
                     onFilterChanged(2)
                 },
-                label = { Text("📅 Recent") },
+                label = { Text("\uD83C\uDF7F In Theatres") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Red,
                     selectedLabelColor = Color.White,
