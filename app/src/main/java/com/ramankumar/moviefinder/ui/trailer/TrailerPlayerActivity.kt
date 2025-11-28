@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Rational
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -50,6 +51,10 @@ class TrailerPlayerActivity : ComponentActivity() {
         val videoTitle = intent.getStringExtra("VIDEO_TITLE") ?: "Trailer"
 
         if (currentVideoKey == null) {
+            Toast.makeText(this,
+                "Invalid trailer key! Please report!",
+                Toast.LENGTH_SHORT
+            ).show()
             finish()
             return
         }
@@ -95,9 +100,9 @@ class TrailerPlayerActivity : ComponentActivity() {
         isInPipMode = isInPictureInPictureMode
 
         if (isInPictureInPictureMode) {
-            android.util.Log.d("TrailerPlayer", "✅ Entered PiP mode")
+            android.util.Log.d("TrailerPlayer", "Entered PiP mode")
         } else {
-            android.util.Log.d("TrailerPlayer", "⬅️ Exited PiP mode")
+            android.util.Log.d("TrailerPlayer", "Exited PiP mode")
         }
     }
 
@@ -341,10 +346,10 @@ private fun PlayerContent(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_PAUSE -> {
-                    android.util.Log.d("TrailerPlayer", "⏸️ Lifecycle: ON_PAUSE")
+                    android.util.Log.d("TrailerPlayer", "Lifecycle: ON_PAUSE")
                 }
                 Lifecycle.Event.ON_RESUME -> {
-                    android.util.Log.d("TrailerPlayer", "▶️ Lifecycle: ON_RESUME")
+                    android.util.Log.d("TrailerPlayer", "Lifecycle: ON_RESUME")
                 }
                 else -> {}
             }

@@ -255,6 +255,10 @@ class MainViewModel(
         when (position) {
             0 -> {
 
+                // EXPLORE TAB
+                // based on current filter load in the movies required
+                loadExploreTabFilter(_currentFilter.value)
+
                 _movies.value = when (_currentFilter.value) {
                     0 -> _trendingMovies.value
                     1 -> _topRatedMovies.value
@@ -262,15 +266,7 @@ class MainViewModel(
                     else -> _trendingMovies.value
                 }
 
-                if (_trendingMovies.value.isEmpty()) {
-                    loadTrendingMovies()
-                }
-                if (_topRatedMovies.value.isEmpty()) {
-                    loadTopRatedMovies()
-                }
-                if (_nowPlayingMovies.value.isEmpty()) {
-                    loadNowPlayingMovies()
-                }
+
             }
             1 -> {
 
@@ -280,6 +276,19 @@ class MainViewModel(
 
                 _movies.value = _favorites.value
             }
+        }
+    }
+
+    /**
+     * Helper function to enable lazy loading. Checks if the current filter
+     * within explore tab has already been loaded/cached. If not then load. This prevents
+     * excessive loading for filters that user will not use.
+     */
+    fun loadExploreTabFilter(currentFilter: Int){
+        when(currentFilter){
+            0-> if(_trendingMovies.value.isEmpty()) loadTrendingMovies()
+            1-> if(_topRatedMovies.value.isEmpty()) loadTopRatedMovies()
+            2-> if(_nowPlayingMovies.value.isEmpty()) loadNowPlayingMovies()
         }
     }
 
