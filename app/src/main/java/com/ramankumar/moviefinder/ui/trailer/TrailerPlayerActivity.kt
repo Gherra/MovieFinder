@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -31,6 +32,9 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 import com.ramankumar.moviefinder.ui.compose.theme.MovieFinderTheme
+
+
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 /**
  * Trailer Player Activity
@@ -104,6 +108,10 @@ class TrailerPlayerActivity : ComponentActivity() {
         } else {
             android.util.Log.d("TrailerPlayer", "Exited PiP mode")
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
     }
 
     override fun onDestroy() {
@@ -231,65 +239,83 @@ private fun PlayerContent(
     onYouTubePlayerViewCreated: (YouTubePlayerView) -> Unit,
     onOpenYouTubeApp: () -> Unit
 ) {
+    // Get ViewModel in composable
+    val viewModel: TrailerPlayerViewModel = viewModel()
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
     ) {
-        // YouTube Player - V13.0.0 SIMPLIFIED (NO IFramePlayerOptions!)
-        AndroidView(
-            factory = { context ->
-                YouTubePlayerView(context).apply {
-                    // Let library handle initialization automatically
-                    enableAutomaticInitialization = true
+        // get context
+        val context = LocalContext.current
 
-                    // Add lifecycle observer
-                    lifecycleOwner.lifecycle.addObserver(this)
-                    onYouTubePlayerViewCreated(this)
 
-                    // Add listener with default settings (NO custom options!)
-                    addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
-                        override fun onReady(youTubePlayer: YouTubePlayer) {
-                            android.util.Log.d("TrailerPlayer", "✅ Player READY! Loading: $videoKey")
-                            onYouTubePlayerCreated(youTubePlayer)
-                            youTubePlayer.loadVideo(videoKey, 0f)
-                            onLoadingChange(false)
-                        }
+        val playerView = remember {
+            YouTubePlayerView(context).apply{
+                enableAutomaticInitialization = true
+            }
+        }
+        LaunchedEffect(playerView) {
 
-                        override fun onError(
-                            youTubePlayer: YouTubePlayer,
-                            error: com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerError
-                        ) {
-                            android.util.Log.e("TrailerPlayer", "❌ ERROR: $error")
-                            onLoadingChange(false)
+            // Add lifecycle observer
+            lifecycleOwner.lifecycle.addObserver(playerView)
+            onYouTubePlayerViewCreated(playerView)
 
-                            // Only redirect if it's definitely the embed restriction
-                            if (error == com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerError.VIDEO_NOT_PLAYABLE_IN_EMBEDDED_PLAYER) {
-                                android.util.Log.w("TrailerPlayer", "🔄 Video not embeddable, will redirect to YouTube")
-                                onErrorChange("This video can't be played in the app.\nOpening in YouTube...")
-                                onShouldRedirectChange(true)
-                            } else {
-                                // Other errors - log but don't auto-redirect
-                                android.util.Log.w("TrailerPlayer", "⚠️ Other error (not auto-redirecting): $error")
-                                onErrorChange("Error loading video.\nTry opening in YouTube.")
-                            }
-                        }
+            // Add listener with default settings (NO custom options!)
+            playerView.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
 
-                        override fun onStateChange(
-                            youTubePlayer: YouTubePlayer,
-                            state: com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState
-                        ) {
-                            android.util.Log.d("TrailerPlayer", "📺 State: $state")
-
-                            if (state == com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState.PLAYING) {
-                                android.util.Log.d("TrailerPlayer", "🎬 VIDEO IS PLAYING! SUCCESS!")
-                            }
-                        }
-                    })
+                override fun onCurrentSecond(youTubePlayer: YouTubePlayer, second: Float) {
+                    viewModel.updatePosition(second)
                 }
-            },
-            modifier = Modifier.fillMaxSize()
+
+                override fun onReady(youTubePlayer: YouTubePlayer) {
+                    val lastPosition = viewModel.getLastPosition()
+                    android.util.Log.d("TrailerPlayer", "✅ Player READY! Loading: $videoKey")
+                    onYouTubePlayerCreated(youTubePlayer)
+                    youTubePlayer.loadVideo(videoKey, lastPosition)
+                    onLoadingChange(false)
+                }
+
+                override fun onError(
+                    youTubePlayer: YouTubePlayer,
+                    error: com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerError
+                ) {
+                    android.util.Log.e("TrailerPlayer", "❌ ERROR: $error")
+                    onLoadingChange(false)
+
+                    // Only redirect if it's definitely the embed restriction
+                    if (error == com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerError.VIDEO_NOT_PLAYABLE_IN_EMBEDDED_PLAYER) {
+                        android.util.Log.w("TrailerPlayer", "🔄 Video not embeddable, will redirect to YouTube")
+                        onErrorChange("This video can't be played in the app.\nOpening in YouTube...")
+                        onShouldRedirectChange(true)
+                    } else {
+                        // Other errors - log but don't auto-redirect
+                        android.util.Log.w("TrailerPlayer", "⚠️ Other error (not auto-redirecting): $error")
+                        onErrorChange("Error loading video.\nTry opening in YouTube.")
+                    }
+                }
+
+                override fun onStateChange(
+                    youTubePlayer: YouTubePlayer,
+                    state: com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState
+                ) {
+                    android.util.Log.d("TrailerPlayer", "📺 State: $state")
+
+                    if (state == com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState.PLAYING) {
+                        android.util.Log.d("TrailerPlayer", "🎬 VIDEO IS PLAYING! SUCCESS!")
+                    }
+                }
+            })
+
+        }
+
+
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = {playerView}
         )
+
 
         // Loading Indicator
         if (isLoading) {
