@@ -9,12 +9,11 @@ import com.ramankumar.moviefinder.data.local.entities.SwipeHistoryEntity
 import com.ramankumar.moviefinder.data.local.entities.toEntity
 import com.ramankumar.moviefinder.data.local.entities.toMovie
 import com.ramankumar.moviefinder.model.Movie
+import com.ramankumar.moviefinder.model.MovieRelevance
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import com.ramankumar.moviefinder.model.Video
-import kotlin.text.forEach
-import kotlin.text.orEmpty
 
 class MovieRepository(
     private val movieDao: MovieDao,
@@ -170,21 +169,75 @@ class MovieRepository(
 
     // SEARCH
 
+    /*
+    helper function to weigh the relevance of search result and order
+     */
+    fun Movie.weightedRating(minimumVotes: Int = 1000, averageMovieRatingConstant: Double = 6.8): Double {
+        val numberOfVotes = this.voteCount
+        val averageRating = this.voteAverage
+
+        return (numberOfVotes.toDouble() / (numberOfVotes + minimumVotes)) *
+                averageRating + (minimumVotes.toDouble() /
+                (numberOfVotes + minimumVotes)) * averageMovieRatingConstant
+    }
+
+    /*
+    relevance score
+     */
+    fun combinedScore(
+        movie: Movie,
+        pageIndex: Int,
+        posInPage: Int,
+        relevanceWeight: Double = 0.2,
+        ratingWeight: Double = 0.3,
+        popularityWeight: Double = 0.5
+    ): Double {
+        // Higher relevance = higher score
+        val relevanceScore = 1.0 / ((pageIndex * 20) + posInPage + 1)
+
+        val wr = movie.weightedRating()
+        val pop = movie.popularity
+
+        return (relevanceWeight * relevanceScore) +
+                (ratingWeight * wr) +
+                (popularityWeight * pop)
+    }
+
+
     suspend fun searchMovies(query: String): Result<List<Movie>> {
         return try {
             // Search across multiple pages for better results
-            val allMovies = mutableListOf<Movie>()
+            val moviesWithMeta = mutableListOf<MovieRelevance>()
 
             for (page in 1..3) {
                 val response = api.searchMovies(apiKey, query, page = page)
                 val movies = response.body()?.results ?: emptyList()
-                allMovies.addAll(movies)
+
+                for ((index, movie) in movies.withIndex()){
+                    moviesWithMeta.add(
+                        MovieRelevance(
+                            movie = movie,
+                            pageIndex = page - 1,
+                            positionInPage = index
+                        )
+                    )
+                }
 
                 // Stop if we got less than 20 results (last page)
                 if (movies.size < 20) break
             }
 
-            Result.success(allMovies)
+            val sorted = moviesWithMeta.sortedByDescending { meta ->
+                combinedScore(
+                    movie = meta.movie,
+                    pageIndex =  meta.pageIndex,
+                    posInPage = meta.positionInPage
+                )
+            }
+
+            Result.success(sorted.map { it.movie })
+//            Result.success(moviesWithMeta.map{it.movie})
+
         } catch (e: Exception) {
             Result.failure(e)
         }

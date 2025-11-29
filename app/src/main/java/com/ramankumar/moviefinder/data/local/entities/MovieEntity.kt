@@ -30,7 +30,11 @@ fun MovieEntity.toMovie(): Movie {
         releaseDate = this.releaseDate,
         voteAverage = this.voteAverage,
         backdropPath = this.backdropPath,
-        genreIds = this.genreIds,  // ← ADDED
+        genreIds = this.genreIds,
+        // Vote count and popularity are only used for relevance will not be grabbed from
+        // Cache/DB
+        voteCount = 0,
+        popularity = 0.0,
         isFavorite = false
     )
 }
