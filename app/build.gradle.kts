@@ -3,6 +3,11 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("com.google.devtools.ksp") version "2.0.21-1.0.27"
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
+
+    // google-service for firebase
+    id("com.google.gms.google-services")
+
+
 }
 
 android {
@@ -132,5 +137,9 @@ dependencies {
     // Gemini
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
-    // implementation("androidx.compose.ui:ui-viewbinding:1.5.4")  <-- DO NOT ADD THIS BACK
+    // Firebase
+    //BOM for Firebase service version sync
+    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    // Firebase auth
+    implementation("com.google.firebase:firebase-auth")
 }
