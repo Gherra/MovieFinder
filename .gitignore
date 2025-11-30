@@ -21,6 +21,8 @@ out/
 
 # API Keys (keep real key files private)
 **/ApiConfig.kt
+google-services.json
+**/google-services.json
 
 # Example template should stay (so do NOT ignore .txt version)
 !**/ApiConfig.example.txt
