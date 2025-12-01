@@ -40,6 +40,9 @@ class MainViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _isNaturalLanguageMode = MutableStateFlow(false)
+    val isNaturalLanguageMode: StateFlow<Boolean> = _isNaturalLanguageMode.asStateFlow()
+
     private val _currentTab = MutableStateFlow(0)
     val currentTab: StateFlow<Int> = _currentTab.asStateFlow()
 
@@ -150,22 +153,45 @@ class MainViewModel(
             _isLoading.value = true
             _error.value = null
 
-
-            repository.searchMovies(query)
-                .onSuccess { movieList ->
-                    _searchResults.value = movieList
-                    // If we're on Search tab, update display
-                    if (_currentTab.value == 1) {
-                        _movies.value = movieList
+            if (_isNaturalLanguageMode.value) {
+                // Natural language search
+                android.util.Log.d("MainViewModel", "Using natural language search for: $query")
+                repository.searchMoviesNaturalLanguage(query)
+                    .onSuccess { result ->
+                        _searchResults.value = result.movies
+                        // If we're on Search tab, update display
+                        if (_currentTab.value == 1) {
+                            _movies.value = result.movies
+                        }
+                        android.util.Log.d("MainViewModel", "Natural language search succeeded: ${result.movies.size} movies")
                     }
-                }
-                .onFailure { exception ->
-                    _error.value = exception.message ?: "Search failed"
-                }
+                    .onFailure { exception ->
+                        _error.value = exception.message ?: "Natural language search failed"
+                        android.util.Log.e("MainViewModel", "Natural language search failed", exception)
+                    }
+            } else {
+                // Standard search
+                repository.searchMovies(query)
+                    .onSuccess { movieList ->
+                        _searchResults.value = movieList
+                        // If we're on Search tab, update display
+                        if (_currentTab.value == 1) {
+                            _movies.value = movieList
+                        }
+                    }
+                    .onFailure { exception ->
+                        _error.value = exception.message ?: "Search failed"
+                    }
+            }
 
             _isLoading.value = false
             _isFirstSearch.value = false
         }
+    }
+
+    fun toggleNaturalLanguageMode() {
+        _isNaturalLanguageMode.value = !_isNaturalLanguageMode.value
+        android.util.Log.d("MainViewModel", "Natural language mode: ${_isNaturalLanguageMode.value}")
     }
 
     private fun observeFavorites() {

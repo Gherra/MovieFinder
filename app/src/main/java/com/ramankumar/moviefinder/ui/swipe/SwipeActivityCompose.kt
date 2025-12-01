@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import com.ramankumar.moviefinder.api.ApiConfig
+import com.ramankumar.moviefinder.api.GeminiService
 import com.ramankumar.moviefinder.api.RetrofitClient
 import com.ramankumar.moviefinder.data.local.AppDatabase
 import com.ramankumar.moviefinder.data.repository.MovieRepository
@@ -15,12 +16,14 @@ class SwipeActivityCompose : ComponentActivity() {
 
     private val viewModel: SwipeViewModel by viewModels {
         val database = AppDatabase.getDatabase(applicationContext)
+        val geminiService = GeminiService(ApiConfig.GEMINI_API_KEY)
         val repository = MovieRepository(
             movieDao = database.movieDao(),
             swipeHistoryDao = database.swipeHistoryDao(),
             favoriteDao = database.favoriteDao(),
             api = RetrofitClient.api,
-            apiKey = ApiConfig.API_KEY
+            apiKey = ApiConfig.API_KEY,
+            geminiService = geminiService
         )
         SwipeViewModelFactory(repository)
     }

@@ -124,6 +124,8 @@ dependencies {
 
     implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:13.0.0")
 
+    // Gemini
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
     // implementation("androidx.compose.ui:ui-viewbinding:1.5.4")  <-- DO NOT ADD THIS BACK
 }

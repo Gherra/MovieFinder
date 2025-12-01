@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
@@ -22,7 +23,6 @@ import com.ramankumar.moviefinder.ui.compose.components.LoadingIndicator
 import com.ramankumar.moviefinder.ui.compose.components.MovieCard
 import com.ramankumar.moviefinder.ui.compose.theme.Red
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     searchQuery: String,
@@ -31,6 +31,8 @@ fun SearchScreen(
     movies: List<Movie>,
     isFirstSearch: Boolean,
     isLoading: Boolean,
+    isNaturalLanguageMode: Boolean,
+    onToggleNaturalLanguage: () -> Unit,
     onMovieClick: (Movie) -> Unit,
     onFavoriteClick: (Movie) -> Unit,
     modifier: Modifier = Modifier
@@ -45,7 +47,14 @@ fun SearchScreen(
             value = searchQuery,
             onValueChange = onSearchQueryChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search movies...") },
+            placeholder = {
+                Text(
+                    if (isNaturalLanguageMode)
+                        "Search with natural language (e.g., 'war movies like Saving Private Ryan')"
+                    else
+                        "Search movies..."
+                )
+            },
             leadingIcon = {
                 Icon(
                     Icons.Filled.Search,
@@ -85,6 +94,38 @@ fun SearchScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { onSearch() })
         )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Natural Language Toggle
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = if (isNaturalLanguageMode) "Natural Language Search" else "Standard Search",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White
+                )
+                Text(
+                    text = "Search by movie title",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF888888)
+                )
+            }
+            Switch(
+                checked = isNaturalLanguageMode,
+                onCheckedChange = { onToggleNaturalLanguage() },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Red,
+                    checkedTrackColor = Red.copy(alpha = 0.5f),
+                    uncheckedThumbColor = Color(0xFF888888),
+                    uncheckedTrackColor = Color(0xFF333333)
+                )
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

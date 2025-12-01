@@ -74,6 +74,7 @@ fun MainScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val isNaturalLanguageMode by viewModel.isNaturalLanguageMode.collectAsStateWithLifecycle()
 
     var selectedRoute by remember { mutableStateOf(Screen.Explore.route) }
     var searchQuery by remember { mutableStateOf("") }
@@ -188,6 +189,8 @@ fun MainScreen(
                     movies = movies,
                     isFirstSearch = isFirstSearch,
                     isLoading = isLoading,
+                    isNaturalLanguageMode = isNaturalLanguageMode,
+                    onToggleNaturalLanguage = { viewModel.toggleNaturalLanguageMode() },
                     onMovieClick = onMovieClick,
                     onFavoriteClick = { movie ->
                         viewModel.toggleFavorite(movie.id)

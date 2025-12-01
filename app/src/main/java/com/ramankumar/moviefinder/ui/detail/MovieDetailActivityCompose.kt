@@ -9,6 +9,7 @@ import androidx.activity.viewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.ramankumar.moviefinder.api.ApiConfig
+import com.ramankumar.moviefinder.api.GeminiService
 import com.ramankumar.moviefinder.api.RetrofitClient
 import com.ramankumar.moviefinder.data.local.AppDatabase
 import com.ramankumar.moviefinder.data.repository.MovieRepository
@@ -43,12 +44,14 @@ class MovieDetailActivityCompose : ComponentActivity() {
 
         // Setup repository
         val database = AppDatabase.getDatabase(applicationContext)
+        val geminiService = GeminiService(ApiConfig.GEMINI_API_KEY)
         repository = MovieRepository(
             movieDao = database.movieDao(),
             swipeHistoryDao = database.swipeHistoryDao(),
             favoriteDao = database.favoriteDao(),
             api = RetrofitClient.api,
-            apiKey = ApiConfig.API_KEY
+            apiKey = ApiConfig.API_KEY,
+            geminiService = geminiService
         )
 
         // NEW: Load trailers (no YouTube API key needed!)

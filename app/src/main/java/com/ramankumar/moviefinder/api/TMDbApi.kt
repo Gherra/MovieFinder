@@ -1,6 +1,7 @@
 package com.ramankumar.moviefinder.api
 
 import com.ramankumar.moviefinder.model.MovieResponse
+import com.ramankumar.moviefinder.model.TMDbKeywordSearchResponse
 import com.ramankumar.moviefinder.model.VideoResponse
 import retrofit2.Response
 import retrofit2.http.GET
@@ -58,4 +59,21 @@ interface TMDbApi {
         @Path("movie_id") movieId: Int,
         @Query("api_key") apiKey: String
     ): Response<VideoResponse>
+
+    @GET("search/keyword")
+    suspend fun searchKeywords(
+        @Query("api_key") apiKey: String,
+        @Query("query") query: String,
+        @Query("page") page: Int = 1
+    ): Response<TMDbKeywordSearchResponse>
+
+    @GET("discover/movie")
+    suspend fun discoverByKeywords(
+        @Query("api_key") apiKey: String,
+        @Query("with_keywords") withKeywords: String? = null,
+        @Query("with_genres") withGenres: String? = null,
+        @Query("sort_by") sortBy: String = "popularity.desc",
+        @Query("page") page: Int = 1,
+        @Query("vote_count.gte") voteCountGte: Int? = null
+    ): Response<MovieResponse>
 }

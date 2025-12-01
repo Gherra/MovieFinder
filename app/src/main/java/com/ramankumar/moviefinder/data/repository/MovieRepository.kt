@@ -1,5 +1,6 @@
 package com.ramankumar.moviefinder.data.repository
 
+import com.ramankumar.moviefinder.api.GeminiService
 import com.ramankumar.moviefinder.api.TMDbApi
 import com.ramankumar.moviefinder.data.local.dao.FavoriteDao
 import com.ramankumar.moviefinder.data.local.dao.MovieDao
@@ -10,6 +11,8 @@ import com.ramankumar.moviefinder.data.local.entities.toEntity
 import com.ramankumar.moviefinder.data.local.entities.toMovie
 import com.ramankumar.moviefinder.model.Movie
 import com.ramankumar.moviefinder.model.MovieRelevance
+import com.ramankumar.moviefinder.model.NaturalLanguageSearchResult
+import com.ramankumar.moviefinder.model.TMDbKeyword
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
@@ -20,7 +23,8 @@ class MovieRepository(
     private val swipeHistoryDao: SwipeHistoryDao,
     private val favoriteDao: FavoriteDao,
     private val api: TMDbApi,
-    private val apiKey: String
+    private val apiKey: String,
+    private val geminiService: GeminiService
 ) {
 
     // PAGINATION SUPPORT
@@ -240,6 +244,174 @@ class MovieRepository(
 
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    // NATURAL LANGUAGE SEARCH
+
+    suspend fun searchMoviesNaturalLanguage(query: String): Result<NaturalLanguageSearchResult> {
+        return try {
+            android.util.Log.d("NaturalLanguageSearch", "===== NATURAL LANGUAGE SEARCH STARTED =====")
+            android.util.Log.d("NaturalLanguageSearch", "User query: $query")
+
+            // Step 1: Get keywords from Gemini
+            android.util.Log.d("NaturalLanguageSearch", "\nStep 1: Calling Gemini API...")
+            val geminiResult = geminiService.convertNaturalLanguageToKeywords(query)
+
+            if (geminiResult.isFailure) {
+                android.util.Log.e("NaturalLanguageSearch", "Gemini API failed: ${geminiResult.exceptionOrNull()?.message}")
+                return Result.failure(geminiResult.exceptionOrNull() ?: Exception("Gemini API failed"))
+            }
+
+            val geminiResponse = geminiResult.getOrNull()!!
+            android.util.Log.d("NaturalLanguageSearch", "Gemini keywords: ${geminiResponse.keywords}")
+            android.util.Log.d("NaturalLanguageSearch", "Gemini genres: ${geminiResponse.genres}")
+            android.util.Log.d("NaturalLanguageSearch", "Gemini vibes: ${geminiResponse.vibes}")
+
+            // Step 2: Convert genre names to TMDB genre IDs
+            val genreIds = geminiResponse.genres.mapNotNull { genreName ->
+                getGenreIdFromName(genreName)
+            }
+            android.util.Log.d("NaturalLanguageSearch", "\nStep 2: Mapped genre IDs: $genreIds")
+
+            // Step 3: Search TMDB for matching keywords
+            android.util.Log.d("NaturalLanguageSearch", "\nStep 3: Searching TMDB keywords...")
+            val allKeywords = geminiResponse.keywords + geminiResponse.vibes
+            val matchedKeywords = mutableListOf<TMDbKeyword>()
+
+            for (keyword in allKeywords) {
+                try {
+                    val response = api.searchKeywords(apiKey, keyword)
+                    val keywords = response.body()?.results ?: emptyList()
+
+                    if (keywords.isNotEmpty()) {
+                        android.util.Log.d("NaturalLanguageSearch", "  ✓ Found TMDB keyword for '$keyword': ${keywords[0].name} (ID: ${keywords[0].id})")
+                        matchedKeywords.add(keywords[0])
+                    } else {
+                        android.util.Log.d("NaturalLanguageSearch", "  ✗ No TMDB keyword found for '$keyword'")
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.w("NaturalLanguageSearch", "  ✗ Error searching keyword '$keyword': ${e.message}")
+                }
+            }
+
+            android.util.Log.d("NaturalLanguageSearch", "\nMatched ${matchedKeywords.size} TMDB keywords")
+
+            // Step 4: Query TMDB discover endpoint
+            android.util.Log.d("NaturalLanguageSearch", "\nStep 4: Fetching movies from TMDB...")
+            val movies = mutableListOf<Movie>()
+
+            // Build query parameters - Use COMMA for OR logic in keywords
+            // Select top 3 most relevant keywords to avoid over-filtering
+            val topKeywords = matchedKeywords.take(3)
+            val keywordIds = topKeywords.map { it.id }.joinToString(",")  // COMMA = OR
+            val genreIdsString = genreIds.joinToString(",")  // COMMA = OR
+
+            android.util.Log.d("NaturalLanguageSearch", "Query parameters:")
+            android.util.Log.d("NaturalLanguageSearch", "  - Using top ${topKeywords.size} keywords: ${topKeywords.map { it.name }}")
+            android.util.Log.d("NaturalLanguageSearch", "  - Keyword IDs: $keywordIds")
+            android.util.Log.d("NaturalLanguageSearch", "  - Genre IDs: $genreIdsString")
+
+            // Fetch multiple pages for better results
+            for (page in 1..5) {  // Increased from 3 to 5 pages
+                try {
+                    val response = api.discoverByKeywords(
+                        apiKey = apiKey,
+                        withKeywords = keywordIds.ifEmpty { null },
+                        withGenres = genreIdsString.ifEmpty { null },
+                        sortBy = "vote_average.desc",  // Sort by rating instead of popularity
+                        page = page,
+                        voteCountGte = 100 // Increased from 50 to get more established films
+                    )
+
+                    val pageMovies = response.body()?.results ?: emptyList()
+                    movies.addAll(pageMovies)
+
+                    android.util.Log.d("NaturalLanguageSearch", "  Page $page: ${pageMovies.size} movies")
+
+                    if (pageMovies.size < 20) break
+                } catch (e: Exception) {
+                    android.util.Log.e("NaturalLanguageSearch", "Error fetching page $page: ${e.message}")
+                    break
+                }
+            }
+
+            // Fallback: If no movies found with keywords, try genre-only search
+            if (movies.isEmpty() && genreIds.isNotEmpty()) {
+                android.util.Log.d("NaturalLanguageSearch", "\nFallback: No results with keywords, trying genre-only search...")
+
+                for (page in 1..2) {
+                    try {
+                        val response = api.discoverByKeywords(
+                            apiKey = apiKey,
+                            withKeywords = null,
+                            withGenres = genreIdsString,
+                            sortBy = "popularity.desc",
+                            page = page,
+                            voteCountGte = 100
+                        )
+
+                        val pageMovies = response.body()?.results ?: emptyList()
+                        movies.addAll(pageMovies)
+
+                        android.util.Log.d("NaturalLanguageSearch", "  Fallback page $page: ${pageMovies.size} movies")
+
+                        if (pageMovies.size < 20) break
+                    } catch (e: Exception) {
+                        android.util.Log.e("NaturalLanguageSearch", "Error in fallback page $page: ${e.message}")
+                        break
+                    }
+                }
+            }
+
+            val uniqueMovies = movies.distinctBy { it.id }
+
+            android.util.Log.d("NaturalLanguageSearch", "\n===== SEARCH COMPLETE =====")
+            android.util.Log.d("NaturalLanguageSearch", "Total movies found: ${uniqueMovies.size}")
+
+            if (uniqueMovies.isNotEmpty()) {
+                android.util.Log.d("NaturalLanguageSearch", "Sample results:")
+                uniqueMovies.take(5).forEach { movie ->
+                    android.util.Log.d("NaturalLanguageSearch", "  - ${movie.title} (${movie.releaseDate.take(4)})")
+                }
+            }
+
+            val result = NaturalLanguageSearchResult(
+                movies = uniqueMovies,
+                geminiResponse = geminiResponse,
+                matchedKeywords = matchedKeywords,
+                usedGenreIds = genreIds
+            )
+
+            Result.success(result)
+        } catch (e: Exception) {
+            android.util.Log.e("NaturalLanguageSearch", "Natural language search failed", e)
+            Result.failure(e)
+        }
+    }
+
+    private fun getGenreIdFromName(genreName: String): Int? {
+        return when (genreName.lowercase()) {
+            "action" -> 28
+            "adventure" -> 12
+            "animation" -> 16
+            "comedy" -> 35
+            "crime" -> 80
+            "documentary" -> 99
+            "drama" -> 18
+            "family" -> 10751
+            "fantasy" -> 14
+            "history" -> 36
+            "horror" -> 27
+            "music" -> 10402
+            "mystery" -> 9648
+            "romance" -> 10749
+            "science fiction", "sci-fi" -> 878
+            "tv movie" -> 10770
+            "thriller" -> 53
+            "war" -> 10752
+            "western" -> 37
+            else -> null
         }
     }
 
