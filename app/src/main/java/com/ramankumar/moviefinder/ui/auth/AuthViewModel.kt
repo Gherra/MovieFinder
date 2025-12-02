@@ -18,6 +18,10 @@ class AuthViewModel(
     )
     val authState = _authState.asStateFlow()
 
+    // Separate state for password reset since it is independant from authState
+    private val _passwordResetState = MutableStateFlow<AuthResult?>(null)
+    val passwordResetState = _passwordResetState.asStateFlow()
+
     // Observe Firebase auth state changes
     private val authStateListener = FirebaseAuth.AuthStateListener { auth ->
         _authState.value = if (auth.currentUser != null) {
@@ -34,8 +38,8 @@ class AuthViewModel(
 
     fun resetPassword(email: String) {
         viewModelScope.launch {
-            _authState.value = AuthResult.Loading
-            _authState.value = repository.sendPasswordReset(email)
+            _passwordResetState.value = AuthResult.Loading
+            _passwordResetState.value = repository.sendPasswordReset(email)
         }
     }
 

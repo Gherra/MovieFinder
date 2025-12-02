@@ -30,6 +30,7 @@ private val JetBrainsMono = FontFamily(
 @Composable
 fun LoginScreen(vm: AuthViewModel) {
     val authState = vm.authState.collectAsState()
+    val passwordResetState = vm.passwordResetState.collectAsState()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -127,7 +128,7 @@ fun LoginScreen(vm: AuthViewModel) {
                 )
             )
 
-            // Show loading or error state
+            // Show loading or error state for login/register
             when (val state = authState.value) {
                 is AuthResult.Loading -> {
                     CircularProgressIndicator(
@@ -149,11 +150,24 @@ fun LoginScreen(vm: AuthViewModel) {
                     }
                 }
                 is AuthResult.Success -> {
-                    // If this was triggered by a resetPassword call 
-                    if (!isRegisterMode && password.isBlank() && email.isNotBlank()) {
+                    // Handled by MainActivity for navigation; no-op here
+                }
+            }
+
+            // Handle password reset state separately so it doesn't affect navigation
+            when (val resetState = passwordResetState.value) {
+                is AuthResult.Loading -> {
+                    resetMessage = "Sending password reset email..."
+                }
+                is AuthResult.Failure -> {
+                    resetMessage = resetState.message ?: "Failed to send password reset email."
+                }
+                is AuthResult.Success -> {
+                    if (email.isNotBlank()) {
                         resetMessage = "If an account exists for $email, a reset link has been sent."
                     }
                 }
+                null -> Unit
             }
 
             Button(
