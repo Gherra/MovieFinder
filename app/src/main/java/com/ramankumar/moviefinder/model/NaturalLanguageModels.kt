@@ -5,7 +5,8 @@ import com.google.gson.annotations.SerializedName
 data class GeminiKeywordResponse(
     val keywords: List<String> = emptyList(),
     val genres: List<String> = emptyList(),
-    val vibes: List<String> = emptyList()
+    val vibes: List<String> = emptyList(),
+    val referenceMovie: String? = null  // The specific movie title being referenced if it exists
 )
 
 data class TMDbKeyword(

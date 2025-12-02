@@ -38,6 +38,7 @@ class GeminiService(private val apiKey: String) {
             android.util.Log.d("GeminiService", "Parsed keywords: ${parsedResponse.keywords}")
             android.util.Log.d("GeminiService", "Parsed genres: ${parsedResponse.genres}")
             android.util.Log.d("GeminiService", "Parsed vibes: ${parsedResponse.vibes}")
+            android.util.Log.d("GeminiService", "Parsed referenceMovie: ${parsedResponse.referenceMovie}")
 
             Result.success(parsedResponse)
         } catch (e: Exception) {
@@ -56,18 +57,25 @@ Return ONLY a valid JSON object (no markdown, no code blocks) with these fields:
 - keywords: Array of specific movie-related keywords or themes (e.g., ["friendship", "coming-of-age", "high-school"])
 - genres: Array of movie genres (use only these: action, adventure, animation, comedy, crime, documentary, drama, family, fantasy, history, horror, music, mystery, romance, science fiction, thriller, war, western)
 - vibes: Array of mood/atmosphere descriptors (e.g., ["lighthearted", "dark", "inspiring"])
+- referenceMovie: String containing the EXACT title of a specific movie being referenced (if any), or null if the query is general. Examples: "Saving Private Ryan", "The Shawshank Redemption", "Inception"
 
 Rules:
 1. Return ONLY the JSON object, nothing else
-2. Use lowercase for all values
+2. Use lowercase for all values EXCEPT referenceMovie (use proper title case)
 3. Be specific with keywords - think about plot elements, themes, settings, character types
 4. Limit to 3-5 keywords, 1-3 genres, 1-3 vibes
-5. If the query is already specific (like a movie title), put it in keywords
+5. If the query mentions a specific movie title, extract it into referenceMovie field
 6. Keywords should be relevant to TMDB's keyword database (themes, plot elements, settings, character archetypes)
-
-Example:
+7. ONLY return a reference movie if there is reasonable likelihood of a relevant movie
+Examples:
 User query: "feel-good movies about friendship"
-{"keywords":["friendship","feel-good","heartwarming"],"genres":["comedy","family"],"vibes":["lighthearted","uplifting"]}
+{"keywords":["friendship","feel-good","heartwarming"],"genres":["comedy","family"],"vibes":["lighthearted","uplifting"],"referenceMovie":null}
+
+User query: "war movies like Saving Private Ryan"
+{"keywords":["world war ii","military","heroism"],"genres":["war","drama","action"],"vibes":["intense","realistic"],"referenceMovie":"Saving Private Ryan"}
+
+User query: "movies similar to Inception"
+{"keywords":["dream","heist","mind-bending"],"genres":["science fiction","thriller","action"],"vibes":["complex","cerebral"],"referenceMovie":"Inception"}
 
 Now process the user's query and return ONLY the JSON object:
         """.trimIndent()
@@ -116,7 +124,13 @@ Now process the user's query and return ONLY the JSON object:
                     }
                 }
 
-                GeminiKeywordResponse(keywords, genres, vibes)
+                val referenceMovie = if (jsonObject.has("referenceMovie") && !jsonObject.isNull("referenceMovie")) {
+                    jsonObject.getString("referenceMovie")
+                } else {
+                    null
+                }
+
+                GeminiKeywordResponse(keywords, genres, vibes, referenceMovie)
             } catch (fallbackError: Exception) {
                 android.util.Log.e("GeminiService", "Fallback parsing also failed", fallbackError)
                 throw JsonSyntaxException("Failed to parse Gemini response: $responseText", e)

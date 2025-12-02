@@ -267,15 +267,34 @@ class MovieRepository(
             android.util.Log.d("NaturalLanguageSearch", "Gemini keywords: ${geminiResponse.keywords}")
             android.util.Log.d("NaturalLanguageSearch", "Gemini genres: ${geminiResponse.genres}")
             android.util.Log.d("NaturalLanguageSearch", "Gemini vibes: ${geminiResponse.vibes}")
+            android.util.Log.d("NaturalLanguageSearch", "Gemini referenceMovie: ${geminiResponse.referenceMovie}")
 
-            // Step 2: Convert genre names to TMDB genre IDs
+            // Step 2: Search for the reference movie if specified
+            val referenceMovies = mutableListOf<Movie>()
+            geminiResponse.referenceMovie?.let { movieTitle ->
+                android.util.Log.d("NaturalLanguageSearch", "\nStep 2: Searching for reference movie: '$movieTitle'")
+                try {
+                    val response = api.searchMovies(apiKey, movieTitle, page = 1)
+                    val results = response.body()?.results ?: emptyList()
+                    if (results.isNotEmpty()) {
+                        referenceMovies.add(results[0])  // Add the top match
+                        android.util.Log.d("NaturalLanguageSearch", "  ✓ Found reference movie: ${results[0].title} (${results[0].releaseDate.take(4)})")
+                    } else {
+                        android.util.Log.d("NaturalLanguageSearch", "  ✗ No match found for '$movieTitle'")
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.w("NaturalLanguageSearch", "  ✗ Error searching reference movie: ${e.message}")
+                }
+            }
+
+            // Step 3: Convert genre names to TMDB genre IDs
             val genreIds = geminiResponse.genres.mapNotNull { genreName ->
                 getGenreIdFromName(genreName)
             }
-            android.util.Log.d("NaturalLanguageSearch", "\nStep 2: Mapped genre IDs: $genreIds")
+            android.util.Log.d("NaturalLanguageSearch", "\nStep 3: Mapped genre IDs: $genreIds")
 
-            // Step 3: Search TMDB for matching keywords
-            android.util.Log.d("NaturalLanguageSearch", "\nStep 3: Searching TMDB keywords...")
+            // Step 4: Search TMDB for matching keywords
+            android.util.Log.d("NaturalLanguageSearch", "\nStep 4: Searching TMDB keywords...")
             val allKeywords = geminiResponse.keywords + geminiResponse.vibes
             val matchedKeywords = mutableListOf<TMDbKeyword>()
 
@@ -297,8 +316,8 @@ class MovieRepository(
 
             android.util.Log.d("NaturalLanguageSearch", "\nMatched ${matchedKeywords.size} TMDB keywords")
 
-            // Step 4: Query TMDB discover endpoint
-            android.util.Log.d("NaturalLanguageSearch", "\nStep 4: Fetching movies from TMDB...")
+            // Step 5: Query TMDB discover endpoint
+            android.util.Log.d("NaturalLanguageSearch", "\nStep 5: Fetching movies from TMDB...")
             val movies = mutableListOf<Movie>()
 
             // Build query parameters - Use COMMA for OR logic in keywords
@@ -364,20 +383,24 @@ class MovieRepository(
                 }
             }
 
-            val uniqueMovies = movies.distinctBy { it.id }
+            // Combine reference movies (first) with keyword-based movies (after)
+            // Remove duplicates by movie ID - reference movie takes priority
+            val combinedMovies = (referenceMovies + movies).distinctBy { it.id }
 
             android.util.Log.d("NaturalLanguageSearch", "\n===== SEARCH COMPLETE =====")
-            android.util.Log.d("NaturalLanguageSearch", "Total movies found: ${uniqueMovies.size}")
+            android.util.Log.d("NaturalLanguageSearch", "Reference movies: ${referenceMovies.size}")
+            android.util.Log.d("NaturalLanguageSearch", "Keyword-based movies: ${movies.size}")
+            android.util.Log.d("NaturalLanguageSearch", "Total unique movies: ${combinedMovies.size}")
 
-            if (uniqueMovies.isNotEmpty()) {
+            if (combinedMovies.isNotEmpty()) {
                 android.util.Log.d("NaturalLanguageSearch", "Sample results:")
-                uniqueMovies.take(5).forEach { movie ->
+                combinedMovies.take(5).forEach { movie ->
                     android.util.Log.d("NaturalLanguageSearch", "  - ${movie.title} (${movie.releaseDate.take(4)})")
                 }
             }
 
             val result = NaturalLanguageSearchResult(
-                movies = uniqueMovies,
+                movies = combinedMovies,
                 geminiResponse = geminiResponse,
                 matchedKeywords = matchedKeywords,
                 usedGenreIds = genreIds
