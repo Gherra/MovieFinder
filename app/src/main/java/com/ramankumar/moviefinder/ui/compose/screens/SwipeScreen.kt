@@ -318,33 +318,10 @@ fun SwipeCard(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .padding(16.dp)
     ) {
-        // Counter in top right
-        Text(
-            text = "$currentIndex / $totalMovies",
-            color = Color(0xFF888888),
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        )
 
-        // Hint text overlay
-        if (hintColor != Color.Transparent) {
-            Text(
-                text = when {
-                    offsetY < -200 -> "NOT SURE 🤔"
-                    offsetX > 200 -> "LIKE ❤️"
-                    else -> "PASS 👎"
-                },
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = hintColor,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(16.dp)
-            )
-        }
+
 
         Card(
             modifier = Modifier
