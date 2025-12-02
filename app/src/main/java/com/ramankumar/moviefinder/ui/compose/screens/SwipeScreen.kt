@@ -167,7 +167,7 @@ fun SwipeScreen(
                                 color = Color(0xFF888888)
                             )
                             Text(
-                                text = "👎 Passed",
+                                text = "👎 Disliked",
                                 fontSize = 12.sp,
                                 color = Color(0xFF888888)
                             )
@@ -182,7 +182,7 @@ fun SwipeScreen(
                                 color = Color(0xFFFFAA00)
                             )
                             Text(
-                                text = "🤔 Not Sure",
+                                text = "Skipped",
                                 fontSize = 12.sp,
                                 color = Color(0xFF888888)
                             )
@@ -307,13 +307,7 @@ fun SwipeCard(
     val rotation = (offsetX / 20f).coerceIn(-30f, 30f)
     val alpha = (1f - (abs(offsetX) / 1000f) - (abs(offsetY) / 1000f)).coerceIn(0f, 1f)
 
-    // Show hint colors based on swipe direction
-    val hintColor = when {
-        offsetY < -200 -> Color(0xFFFFAA00) // Orange for "not sure" (up)
-        offsetX > 200 -> Gold // Gold for like (right)
-        offsetX < -200 -> Color.Red // Red for pass (left)
-        else -> Color.Transparent
-    }
+
 
     Box(
         modifier = Modifier
@@ -347,7 +341,7 @@ fun SwipeCard(
             elevation = CardDefaults.cardElevation(8.dp)
         ) {
             Column {
-                // Trailer Player (fallback to poster if no trailer)
+                // Trailer Player
                 if (youtubeKey != null) {
                     TrailerPlayer(
                         youtubeKey = youtubeKey,
