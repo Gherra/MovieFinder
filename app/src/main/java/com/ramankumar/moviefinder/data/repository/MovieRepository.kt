@@ -27,8 +27,6 @@ class MovieRepository(
     private val geminiService: GeminiService
 ) {
 
-    // PAGINATION SUPPORT
-
     suspend fun getTrendingMovies(
         startPage: Int = 1,
         pageCount: Int = 5,
@@ -65,7 +63,6 @@ class MovieRepository(
                 allMovies.addAll(movies)
             }
 
-            android.util.Log.d("MovieRepository", "getTopRatedMovies: Total = ${allMovies.size}")
             Result.success(allMovies)
         } catch (e: Exception) {
             Result.failure(e)
@@ -85,14 +82,11 @@ class MovieRepository(
                 allMovies.addAll(movies)
             }
 
-            android.util.Log.d("MovieRepository", "getNowPlayingMovies: Total = ${allMovies.size}")
             Result.success(allMovies)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-
-    // SWIPE FUNCTIONALITY
 
     /**
      * Gets shuffled movies for swiping, excluding already swiped ones
@@ -100,7 +94,6 @@ class MovieRepository(
      */
     suspend fun getShuffledMovies(): Result<List<Movie>> {
         return try {
-            android.util.Log.d("MovieRepository", "getShuffledMovies: Starting API call")
 
             // Fetch multiple pages for variety (10 pages = ~200 movies)
             val allMovies = mutableListOf<Movie>()
@@ -110,36 +103,28 @@ class MovieRepository(
                 allMovies.addAll(movies)
             }
 
-            android.util.Log.d("MovieRepository", "getShuffledMovies: Fetched ${allMovies.size} movies from 10 pages")
-
             // Get list of already swiped movie IDs
             val swipedIds = swipeHistoryDao.getAllSwipedMovieIds()
-            android.util.Log.d("MovieRepository", "getShuffledMovies: ${swipedIds.size} movies already swiped")
 
             // Filter out swiped movies
             val unswipedMovies = allMovies.filter { it.id !in swipedIds }
-            android.util.Log.d("MovieRepository", "getShuffledMovies: ${unswipedMovies.size} unswiped movies available")
 
             if (unswipedMovies.isEmpty()) {
-                android.util.Log.e("MovieRepository", "getShuffledMovies: No unswiped movies! Returning all movies.")
                 // If all movies swiped, return all (user can reset history)
                 val shuffled = allMovies.shuffled()
                 return Result.success(shuffled)
             }
 
             val shuffledMovies = unswipedMovies.shuffled()
-            android.util.Log.d("MovieRepository", "getShuffledMovies: Returning ${shuffledMovies.size} shuffled movies")
 
             Result.success(shuffledMovies)
         } catch (e: Exception) {
-            android.util.Log.e("MovieRepository", "getShuffledMovies: Exception - ${e.message}", e)
             Result.failure(e)
         }
     }
 
     /**
      * Records a swipe action (left = dislike, right = like, up = neutral)
-     * @param neutral Set to true for "not sure" swipes (swipe up gesture)
      */
     suspend fun recordSwipe(movie: Movie, liked: Boolean, neutral: Boolean = false) {
         val swipe = SwipeHistoryEntity(
@@ -151,7 +136,6 @@ class MovieRepository(
         swipeHistoryDao.insertSwipe(swipe)
         movieDao.insertMovie(movie.toEntity())
 
-        android.util.Log.d("MovieRepository", "recordSwipe: Movie ${movie.id} - liked=$liked, neutral=$neutral")
     }
 
     /**
@@ -159,7 +143,6 @@ class MovieRepository(
      */
     suspend fun clearSwipeHistory() {
         swipeHistoryDao.deleteAllSwipes()
-        android.util.Log.d("MovieRepository", "clearSwipeHistory: All swipe history cleared")
     }
 
     suspend fun getSwipeStats(): SwipeStats {
@@ -170,8 +153,6 @@ class MovieRepository(
             neutral = swipeHistoryDao.getNeutralCount()
         )
     }
-
-    // SEARCH
 
     /*
     helper function to weigh the relevance of search result and order
@@ -240,61 +221,47 @@ class MovieRepository(
             }
 
             Result.success(sorted.map { it.movie })
-//            Result.success(moviesWithMeta.map{it.movie})
-
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    // NATURAL LANGUAGE SEARCH
-
+    /*
+    implement searching with natural language using Gemini API
+    */
     suspend fun searchMoviesNaturalLanguage(query: String): Result<NaturalLanguageSearchResult> {
         return try {
-            android.util.Log.d("NaturalLanguageSearch", "===== NATURAL LANGUAGE SEARCH STARTED =====")
-            android.util.Log.d("NaturalLanguageSearch", "User query: $query")
-
-            // Step 1: Get keywords from Gemini
-            android.util.Log.d("NaturalLanguageSearch", "\nStep 1: Calling Gemini API...")
+            // Get keywords from Gemini
             val geminiResult = geminiService.convertNaturalLanguageToKeywords(query)
 
             if (geminiResult.isFailure) {
-                android.util.Log.e("NaturalLanguageSearch", "Gemini API failed: ${geminiResult.exceptionOrNull()?.message}")
                 return Result.failure(geminiResult.exceptionOrNull() ?: Exception("Gemini API failed"))
             }
 
             val geminiResponse = geminiResult.getOrNull()!!
-            android.util.Log.d("NaturalLanguageSearch", "Gemini keywords: ${geminiResponse.keywords}")
-            android.util.Log.d("NaturalLanguageSearch", "Gemini genres: ${geminiResponse.genres}")
-            android.util.Log.d("NaturalLanguageSearch", "Gemini vibes: ${geminiResponse.vibes}")
-            android.util.Log.d("NaturalLanguageSearch", "Gemini referenceMovie: ${geminiResponse.referenceMovie}")
 
-            // Step 2: Search for the reference movie if specified
+            // Search for the reference movie if specified
+            // (reference movie is the movie predicted by gemini)
             val referenceMovies = mutableListOf<Movie>()
             geminiResponse.referenceMovie?.let { movieTitle ->
-                android.util.Log.d("NaturalLanguageSearch", "\nStep 2: Searching for reference movie: '$movieTitle'")
                 try {
                     val response = api.searchMovies(apiKey, movieTitle, page = 1)
                     val results = response.body()?.results ?: emptyList()
                     if (results.isNotEmpty()) {
                         referenceMovies.add(results[0])  // Add the top match
-                        android.util.Log.d("NaturalLanguageSearch", "  ✓ Found reference movie: ${results[0].title} (${results[0].releaseDate.take(4)})")
                     } else {
-                        android.util.Log.d("NaturalLanguageSearch", "  ✗ No match found for '$movieTitle'")
+                        
                     }
                 } catch (e: Exception) {
-                    android.util.Log.w("NaturalLanguageSearch", "  ✗ Error searching reference movie: ${e.message}")
                 }
             }
 
-            // Step 3: Convert genre names to TMDB genre IDs
+            // Convert genre names to TMDB genre IDs
             val genreIds = geminiResponse.genres.mapNotNull { genreName ->
                 getGenreIdFromName(genreName)
             }
-            android.util.Log.d("NaturalLanguageSearch", "\nStep 3: Mapped genre IDs: $genreIds")
 
-            // Step 4: Search TMDB for matching keywords
-            android.util.Log.d("NaturalLanguageSearch", "\nStep 4: Searching TMDB keywords...")
+            // Search TMDB for matching keywords
             val allKeywords = geminiResponse.keywords + geminiResponse.vibes
             val matchedKeywords = mutableListOf<TMDbKeyword>()
 
@@ -304,35 +271,25 @@ class MovieRepository(
                     val keywords = response.body()?.results ?: emptyList()
 
                     if (keywords.isNotEmpty()) {
-                        android.util.Log.d("NaturalLanguageSearch", "  ✓ Found TMDB keyword for '$keyword': ${keywords[0].name} (ID: ${keywords[0].id})")
                         matchedKeywords.add(keywords[0])
                     } else {
-                        android.util.Log.d("NaturalLanguageSearch", "  ✗ No TMDB keyword found for '$keyword'")
                     }
                 } catch (e: Exception) {
-                    android.util.Log.w("NaturalLanguageSearch", "  ✗ Error searching keyword '$keyword': ${e.message}")
                 }
             }
 
-            android.util.Log.d("NaturalLanguageSearch", "\nMatched ${matchedKeywords.size} TMDB keywords")
 
-            // Step 5: Query TMDB discover endpoint
-            android.util.Log.d("NaturalLanguageSearch", "\nStep 5: Fetching movies from TMDB...")
+            // Query TMDB discover endpoint
             val movies = mutableListOf<Movie>()
 
-            // Build query parameters - Use COMMA for OR logic in keywords
+            // Use COMMA for OR logic in keywords
             // Select top 3 most relevant keywords to avoid over-filtering
             val topKeywords = matchedKeywords.take(3)
             val keywordIds = topKeywords.map { it.id }.joinToString(",")  // COMMA = OR
             val genreIdsString = genreIds.joinToString(",")  // COMMA = OR
 
-            android.util.Log.d("NaturalLanguageSearch", "Query parameters:")
-            android.util.Log.d("NaturalLanguageSearch", "  - Using top ${topKeywords.size} keywords: ${topKeywords.map { it.name }}")
-            android.util.Log.d("NaturalLanguageSearch", "  - Keyword IDs: $keywordIds")
-            android.util.Log.d("NaturalLanguageSearch", "  - Genre IDs: $genreIdsString")
-
             // Fetch multiple pages for better results
-            for (page in 1..5) {  // Increased from 3 to 5 pages
+            for (page in 1..5) { 
                 try {
                     val response = api.discoverByKeywords(
                         apiKey = apiKey,
@@ -340,24 +297,20 @@ class MovieRepository(
                         withGenres = genreIdsString.ifEmpty { null },
                         sortBy = "vote_average.desc",  // Sort by rating instead of popularity
                         page = page,
-                        voteCountGte = 100 // Increased from 50 to get more established films
+                        voteCountGte = 100
                     )
 
                     val pageMovies = response.body()?.results ?: emptyList()
                     movies.addAll(pageMovies)
 
-                    android.util.Log.d("NaturalLanguageSearch", "  Page $page: ${pageMovies.size} movies")
-
                     if (pageMovies.size < 20) break
                 } catch (e: Exception) {
-                    android.util.Log.e("NaturalLanguageSearch", "Error fetching page $page: ${e.message}")
                     break
                 }
             }
 
             // Fallback: If no movies found with keywords, try genre-only search
             if (movies.isEmpty() && genreIds.isNotEmpty()) {
-                android.util.Log.d("NaturalLanguageSearch", "\nFallback: No results with keywords, trying genre-only search...")
 
                 for (page in 1..2) {
                     try {
@@ -373,31 +326,16 @@ class MovieRepository(
                         val pageMovies = response.body()?.results ?: emptyList()
                         movies.addAll(pageMovies)
 
-                        android.util.Log.d("NaturalLanguageSearch", "  Fallback page $page: ${pageMovies.size} movies")
-
                         if (pageMovies.size < 20) break
                     } catch (e: Exception) {
-                        android.util.Log.e("NaturalLanguageSearch", "Error in fallback page $page: ${e.message}")
                         break
                     }
                 }
             }
 
-            // Combine reference movies (first) with keyword-based movies (after)
+            // Combine reference movies with keyword-based movies 
             // Remove duplicates by movie ID - reference movie takes priority
             val combinedMovies = (referenceMovies + movies).distinctBy { it.id }
-
-            android.util.Log.d("NaturalLanguageSearch", "\n===== SEARCH COMPLETE =====")
-            android.util.Log.d("NaturalLanguageSearch", "Reference movies: ${referenceMovies.size}")
-            android.util.Log.d("NaturalLanguageSearch", "Keyword-based movies: ${movies.size}")
-            android.util.Log.d("NaturalLanguageSearch", "Total unique movies: ${combinedMovies.size}")
-
-            if (combinedMovies.isNotEmpty()) {
-                android.util.Log.d("NaturalLanguageSearch", "Sample results:")
-                combinedMovies.take(5).forEach { movie ->
-                    android.util.Log.d("NaturalLanguageSearch", "  - ${movie.title} (${movie.releaseDate.take(4)})")
-                }
-            }
 
             val result = NaturalLanguageSearchResult(
                 movies = combinedMovies,
@@ -408,7 +346,6 @@ class MovieRepository(
 
             Result.success(result)
         } catch (e: Exception) {
-            android.util.Log.e("NaturalLanguageSearch", "Natural language search failed", e)
             Result.failure(e)
         }
     }
@@ -437,10 +374,6 @@ class MovieRepository(
             else -> null
         }
     }
-
-    //  FAVORITES
-
-//    fun checkMovieCached(): Flow<>
 
     fun getLikedMovies(): Flow<List<SwipeHistoryEntity>> {
         return swipeHistoryDao.getLikedMovies()
@@ -482,26 +415,17 @@ class MovieRepository(
         return favoriteDao.isFavorite(movieId)
     }
 
-    // RECOMMENDATION SYSTEM WITH DETAILED LOGGING
-
     /**
      * Gets personalized movie recommendations based on swipe history
      * Analyzes liked movies to determine genre preferences, rating preferences, and year preferences
      */
     suspend fun getRecommendedMovies(): Result<List<Movie>> {
         return try {
-            android.util.Log.d("RecommendationEngine", "═══════════════════════════════════════")
-            android.util.Log.d("RecommendationEngine", "🎬 STARTING RECOMMENDATION ENGINE 🎬")
-            android.util.Log.d("RecommendationEngine", "═══════════════════════════════════════")
 
             // Get all liked movies from swipe history
             val likedSwipes = swipeHistoryDao.getLikedMovies().first()
 
-            android.util.Log.d("RecommendationEngine", "STEP 1: Analyzing Swipe History")
-            android.util.Log.d("RecommendationEngine", "   ├─ Total liked swipes: ${likedSwipes.size}")
-
             if (likedSwipes.isEmpty()) {
-                android.util.Log.w("RecommendationEngine", "   └─ INSUFFICIENT DATA: No liked swipes found")
                 return Result.failure(Exception("Not enough swipe data. Like at least 5 movies to get recommendations!"))
             }
 
@@ -511,14 +435,8 @@ class MovieRepository(
             }
 
             if (likedMovies.size < 3) {
-                android.util.Log.w("RecommendationEngine", "   └─ INSUFFICIENT DATA: Only ${likedMovies.size} liked movies found (need 3+)")
                 return Result.failure(Exception("Need at least 3 liked movies for recommendations"))
             }
-
-            android.util.Log.d("RecommendationEngine", "   └─ Successfully loaded ${likedMovies.size} liked movie details")
-
-            // ANALYZE GENRE PREFERENCES
-            android.util.Log.d("RecommendationEngine", "\n🎭 STEP 2: Genre Analysis")
 
             val genreFrequency = mutableMapOf<Int, Int>()
             var moviesWithGenres = 0
@@ -533,8 +451,6 @@ class MovieRepository(
                 }
             }
 
-            android.util.Log.d("RecommendationEngine", "   ├─ Movies with genre data: $moviesWithGenres / ${likedMovies.size}")
-
             val topGenres = genreFrequency.entries
                 .sortedByDescending { it.value }
                 .take(3)
@@ -544,7 +460,6 @@ class MovieRepository(
                 topGenres.joinToString("|")
             } else null
 
-            android.util.Log.d("RecommendationEngine", "   ├─ Genre frequency distribution:")
             genreFrequency.entries
                 .sortedByDescending { it.value }
                 .take(5)
@@ -553,31 +468,16 @@ class MovieRepository(
                     val percentage = (entry.value.toFloat() / moviesWithGenres * 100).toInt()
                     val isSelected = index < 3
                     val marker = if (isSelected) "✓" else " "
-                    android.util.Log.d("RecommendationEngine", "   │  $marker Genre ${entry.key} ($genreName): ${entry.value} occurrences ($percentage%)")
                 }
-
-            android.util.Log.d("RecommendationEngine", "   ├─ Top 3 selected genres: ${topGenres.joinToString(", ") { "$it (${getGenreName(it)})" }}")
-            android.util.Log.d("RecommendationEngine", "   └─ Genre filter string: $genreFilter")
-
-            // ANALYZE RATING PREFERENCES
-            android.util.Log.d("RecommendationEngine", "\n STEP 3: Rating Analysis")
 
             val ratings = likedMovies.map { it.voteAverage }
             val avgRating = ratings.average()
             val minRating = (avgRating - 1.0).coerceAtLeast(5.0)
             val maxRating = ratings.maxOrNull() ?: 10.0
 
-            android.util.Log.d("RecommendationEngine", "   ├─ Rating distribution:")
             ratings.sorted().forEach { rating ->
                 val stars = "★".repeat((rating / 2).toInt()) + "☆".repeat(5 - (rating / 2).toInt())
-                android.util.Log.d("RecommendationEngine", "   │  $stars ${"%.1f".format(rating)}")
             }
-            android.util.Log.d("RecommendationEngine", "   ├─ Average rating: ${"%.2f".format(avgRating)}")
-            android.util.Log.d("RecommendationEngine", "   ├─ Minimum threshold: ${"%.2f".format(minRating)}")
-            android.util.Log.d("RecommendationEngine", "   └─ Maximum rating: ${"%.2f".format(maxRating)}")
-
-            // ANALYZE YEAR PREFERENCES
-            android.util.Log.d("RecommendationEngine", "\n STEP 4: Year/Era Preference Analysis")
 
             val years = likedMovies.mapNotNull { movie ->
                 movie.releaseDate.take(4).toIntOrNull()
@@ -589,11 +489,6 @@ class MovieRepository(
 
             val prefersRecent = recentMovies.toFloat() / likedMovies.size >= 0.6f
             val prefersModern = modernMovies.toFloat() / likedMovies.size >= 0.5f
-
-            android.util.Log.d("RecommendationEngine", "   ├─ Era distribution:")
-            android.util.Log.d("RecommendationEngine", "   │  Recent (2020+):  $recentMovies movies (${(recentMovies.toFloat() / years.size * 100).toInt()}%)")
-            android.util.Log.d("RecommendationEngine", "   │  Modern (2010-19): $modernMovies movies (${(modernMovies.toFloat() / years.size * 100).toInt()}%)")
-            android.util.Log.d("RecommendationEngine", "   │  Classic (<2010):  $classicMovies movies (${(classicMovies.toFloat() / years.size * 100).toInt()}%)")
 
             val releaseDateFrom = when {
                 prefersRecent -> "2020-01-01"
@@ -608,44 +503,8 @@ class MovieRepository(
                 else -> "MIXED (2000+)"
             }
 
-            android.util.Log.d("RecommendationEngine", "   ├─ Detected preference: $eraPreference")
-            android.util.Log.d("RecommendationEngine", "   └─ Date filter: $releaseDateFrom to $releaseDateTo")
-
-            // ========== CALCULATE WEIGHTS ==========
-            android.util.Log.d("RecommendationEngine", "\n⚖️  STEP 5: Multi-Factor Weighting")
-            android.util.Log.d("RecommendationEngine", "   ├─ Factor 1: Genre matching (HIGHEST priority)")
-            android.util.Log.d("RecommendationEngine", "   │  Weight: 70%")
-            android.util.Log.d("RecommendationEngine", "   │  Filter: with_genres=$genreFilter")
-            android.util.Log.d("RecommendationEngine", "   │")
-            android.util.Log.d("RecommendationEngine", "   ├─ Factor 2: Rating threshold (MEDIUM priority)")
-            android.util.Log.d("RecommendationEngine", "   │  Weight: 20%")
-            android.util.Log.d("RecommendationEngine", "   │  Filter: vote_average.gte=${"%.2f".format(minRating)}")
-            android.util.Log.d("RecommendationEngine", "   │")
-            android.util.Log.d("RecommendationEngine", "   ├─ Factor 3: Era preference (LOW priority)")
-            android.util.Log.d("RecommendationEngine", "   │  Weight: 10%")
-            android.util.Log.d("RecommendationEngine", "   │  Filter: release_date=$releaseDateFrom to $releaseDateTo")
-            android.util.Log.d("RecommendationEngine", "   │")
-            android.util.Log.d("RecommendationEngine", "   └─ Quality filters:")
-            android.util.Log.d("RecommendationEngine", "      ├─ vote_count.gte=100 (exclude obscure movies)")
-            android.util.Log.d("RecommendationEngine", "      └─ original_language=en (English movies)")
-
-
-            android.util.Log.d("RecommendationEngine", "\n STEP 6: Fetching Recommendations from TMDb API")
-
             val allRecommendations = mutableListOf<Movie>()
             val pageCount = 5
-
-            android.util.Log.d("RecommendationEngine", "   ├─ API Call Parameters:")
-            android.util.Log.d("RecommendationEngine", "   │  Endpoint: /discover/movie")
-            android.util.Log.d("RecommendationEngine", "   │  with_genres: $genreFilter")
-            android.util.Log.d("RecommendationEngine", "   │  vote_average.gte: $minRating")
-            android.util.Log.d("RecommendationEngine", "   │  primary_release_date.gte: $releaseDateFrom")
-            android.util.Log.d("RecommendationEngine", "   │  primary_release_date.lte: $releaseDateTo")
-            android.util.Log.d("RecommendationEngine", "   │  vote_count.gte: 100")
-            android.util.Log.d("RecommendationEngine", "   │  original_language: en")
-            android.util.Log.d("RecommendationEngine", "   │  sort_by: vote_average.desc")
-            android.util.Log.d("RecommendationEngine", "   │  pages: $pageCount")
-            android.util.Log.d("RecommendationEngine", "   │")
 
             for (page in 1..pageCount) {
                 val response = api.discoverMovies(
@@ -661,46 +520,16 @@ class MovieRepository(
                 )
                 val movies = response.body()?.results ?: emptyList()
                 allRecommendations.addAll(movies)
-                android.util.Log.d("RecommendationEngine", "   │  Page $page: ${movies.size} movies fetched")
             }
-
-            android.util.Log.d("RecommendationEngine", "   └─ Total fetched: ${allRecommendations.size} movies")
-
-
-            android.util.Log.d("RecommendationEngine", "\n STEP 7: Filtering Results")
 
             val swipedIds = swipeHistoryDao.getAllSwipedMovieIds()
-            android.util.Log.d("RecommendationEngine", "   ├─ Total swiped movies: ${swipedIds.size}")
 
             val unseenRecommendations = allRecommendations.filter { it.id !in swipedIds }
-            android.util.Log.d("RecommendationEngine", "   ├─ Unseen movies: ${unseenRecommendations.size}")
 
             val finalRecommendations = unseenRecommendations.take(60)
-            android.util.Log.d("RecommendationEngine", "   └─ Final recommendations: ${finalRecommendations.size} (capped at 60)")
-
-            // SUMMARY
-            android.util.Log.d("RecommendationEngine", "\nRECOMMENDATION SUMMARY")
-            android.util.Log.d("RecommendationEngine", "═══════════════════════════════════════")
-            android.util.Log.d("RecommendationEngine", "✓ Based on: ${likedMovies.size} liked movies")
-            android.util.Log.d("RecommendationEngine", "✓ Top genres: ${topGenres.joinToString(", ") { getGenreName(it) }}")
-            android.util.Log.d("RecommendationEngine", "✓ Rating preference: ${"%.1f".format(avgRating)}+ stars")
-            android.util.Log.d("RecommendationEngine", "✓ Era preference: $eraPreference")
-            android.util.Log.d("RecommendationEngine", "✓ Results: ${finalRecommendations.size} personalized recommendations")
-            android.util.Log.d("RecommendationEngine", "═══════════════════════════════════════")
-
-            if (finalRecommendations.isNotEmpty()) {
-                android.util.Log.d("RecommendationEngine", "\n🎬 Sample Recommendations (Top 5):")
-                finalRecommendations.take(5).forEachIndexed { index, movie ->
-                    android.util.Log.d("RecommendationEngine", "   ${index + 1}. ${movie.title} (${movie.releaseDate.take(4)}) - ⭐ ${movie.voteAverage}")
-                }
-            }
-
-            android.util.Log.d("RecommendationEngine", "\nRECOMMENDATION ENGINE COMPLETE\n")
 
             Result.success(finalRecommendations)
         } catch (e: Exception) {
-            android.util.Log.e("RecommendationEngine", "\nERROR IN RECOMMENDATION ENGINE")
-            android.util.Log.e("RecommendationEngine", "   Exception: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -733,8 +562,6 @@ class MovieRepository(
 
     suspend fun getMovieTrailers(movieId: Int): Result<List<Video>> {
         return try {
-            android.util.Log.d("MovieRepository", "getMovieTrailers: Fetching for movie $movieId")
-
             val response = api.getMovieVideos(movieId, apiKey)
 
             if (response.isSuccessful) {
@@ -745,19 +572,11 @@ class MovieRepository(
                     .filter { it.isYouTube() }  // Only YouTube videos
                     .sortedByDescending { it.getPriority() }  // Best first
 
-                android.util.Log.d("MovieRepository", "getMovieTrailers: Found ${trailers.size} YouTube trailers")
-
-                if (trailers.isNotEmpty()) {
-                    android.util.Log.d("MovieRepository", "Top trailer: ${trailers[0].name} (${trailers[0].type}, official=${trailers[0].official})")
-                }
-
                 Result.success(trailers)
             } else {
-                android.util.Log.e("MovieRepository", "getMovieTrailers: API error ${response.code()}")
                 Result.failure(Exception("Failed to fetch trailers: ${response.code()}"))
             }
         } catch (e: Exception) {
-            android.util.Log.e("MovieRepository", "getMovieTrailers: Exception - ${e.message}", e)
             Result.failure(e)
         }
     }

@@ -22,10 +22,10 @@ data class Video(
     val id: String,
 
     @SerializedName("key")
-    val key: String,  // YouTube video ID (e.g., "dQw4w9WgXcQ")
+    val key: String,  // YouTube video ID
 
     @SerializedName("name")
-    val name: String,  // Trailer title (e.g., "Official Trailer")
+    val name: String,  // Trailer title
 
     @SerializedName("site")
     val site: String,  // "YouTube" or "Vimeo"

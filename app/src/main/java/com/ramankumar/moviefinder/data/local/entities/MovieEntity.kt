@@ -14,7 +14,7 @@ data class MovieEntity(
     val overview: String,
     val releaseDate: String,
     val voteAverage: Double,
-    val genreIds: List<Int>?,  // ← ADDED with TypeConverter support
+    val genreIds: List<Int>?,  // Added with TypeConverter support
     val popularity: Double,
     val originalLanguage: String,
     val isCached: Boolean = true,

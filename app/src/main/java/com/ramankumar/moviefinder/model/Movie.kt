@@ -31,7 +31,7 @@ data class Movie(
     val backdropPath: String?,
 
     @SerializedName("genre_ids")
-    val genreIds: List<Int>? = null,  // ← ADDED for recommendations
+    val genreIds: List<Int>? = null,  // Added for recommendations
 
     var isFavorite: Boolean = false
 ) {

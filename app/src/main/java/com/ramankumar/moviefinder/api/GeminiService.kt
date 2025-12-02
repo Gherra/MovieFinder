@@ -25,24 +25,14 @@ class GeminiService(private val apiKey: String) {
         return try {
             val prompt = buildPrompt(query)
 
-            android.util.Log.d("GeminiService", "Sending prompt to Gemini:\n$prompt")
-
             val response = model.generateContent(prompt)
             val responseText = response.text ?: ""
-
-            android.util.Log.d("GeminiService", "Gemini response:\n$responseText")
 
             // Parse JSON from response
             val parsedResponse = parseGeminiResponse(responseText)
 
-            android.util.Log.d("GeminiService", "Parsed keywords: ${parsedResponse.keywords}")
-            android.util.Log.d("GeminiService", "Parsed genres: ${parsedResponse.genres}")
-            android.util.Log.d("GeminiService", "Parsed vibes: ${parsedResponse.vibes}")
-            android.util.Log.d("GeminiService", "Parsed referenceMovie: ${parsedResponse.referenceMovie}")
-
             Result.success(parsedResponse)
         } catch (e: Exception) {
-            android.util.Log.e("GeminiService", "Error processing natural language query", e)
             Result.failure(e)
         }
     }
@@ -89,11 +79,9 @@ Now process the user's query and return ONLY the JSON object:
                 .replace("```", "")
                 .trim()
 
-            android.util.Log.d("GeminiService", "Cleaned JSON: $cleanedJson")
 
             return gson.fromJson(cleanedJson, GeminiKeywordResponse::class.java)
         } catch (e: JsonSyntaxException) {
-            android.util.Log.e("GeminiService", "JSON parsing failed, attempting fallback parsing", e)
 
             //Fallback: Try to extract JSON manually
             return try {
@@ -132,7 +120,6 @@ Now process the user's query and return ONLY the JSON object:
 
                 GeminiKeywordResponse(keywords, genres, vibes, referenceMovie)
             } catch (fallbackError: Exception) {
-                android.util.Log.e("GeminiService", "Fallback parsing also failed", fallbackError)
                 throw JsonSyntaxException("Failed to parse Gemini response: $responseText", e)
             }
         }
