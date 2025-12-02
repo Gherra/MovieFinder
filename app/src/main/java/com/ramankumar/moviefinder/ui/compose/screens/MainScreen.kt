@@ -2,6 +2,7 @@ package com.ramankumar.moviefinder.ui.compose.screens
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
@@ -65,7 +66,8 @@ sealed class BottomNavItem(
 fun MainScreen(
     viewModel: MainViewModel,
     onMovieClick: (Movie) -> Unit,
-    onSwipeClick: () -> Unit
+    onSwipeClick: () -> Unit,
+    onLogout: () -> Unit
 ) {
     val movies by viewModel.movies.collectAsStateWithLifecycle()
     val favorites by viewModel.favorites.collectAsStateWithLifecycle()
@@ -95,6 +97,15 @@ fun MainScreen(
                         "MovieFinder",
                         color = Color.White
                     )
+                },
+                actions = {
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            Icons.Filled.ExitToApp,
+                            contentDescription = "Logout",
+                            tint = Red
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFF1F1F1F)
