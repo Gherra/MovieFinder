@@ -32,6 +32,13 @@ class AuthViewModel(
         FirebaseAuth.getInstance().addAuthStateListener(authStateListener)
     }
 
+    fun resetPassword(email: String) {
+        viewModelScope.launch {
+            _authState.value = AuthResult.Loading
+            _authState.value = repository.sendPasswordReset(email)
+        }
+    }
+
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _authState.value = AuthResult.Loading
@@ -48,7 +55,6 @@ class AuthViewModel(
 
     fun logout() {
         repository.logout()
-        // Auth state listener will automatically update _authState
     }
 
     override fun onCleared() {
