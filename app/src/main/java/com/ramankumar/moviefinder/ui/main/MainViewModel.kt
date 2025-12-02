@@ -304,18 +304,25 @@ class MainViewModel(
         }
     }
 
-    fun loadRecommendations() {
+    fun loadRecommendations(refresh: Boolean = false) {
         viewModelScope.launch {
-            _isLoading.value = true
+            if (refresh) {
+                _isRefreshing.value = true
+            } else {
+                _isLoading.value = true
+                _isRefreshing.value = false
+            }
             _error.value = null
 
-            android.util.Log.d("MainViewModel", "loadRecommendations: Starting...")
+            android.util.Log.d("MainViewModel", "loadRecommendations: Starting (refresh=$refresh)...")
 
             repository.getRecommendedMovies()
                 .onSuccess { movieList ->
-                    _recommendations.value = movieList
-                    _movies.value = movieList
-                    android.util.Log.d("MainViewModel", "loadRecommendations: SUCCESS - ${movieList.size} recommendations")
+                    // Only shuffle on refresh, not on initial load
+                    val finalList = if (refresh) movieList.shuffled() else movieList
+                    _recommendations.value = finalList
+                    _movies.value = finalList
+                    android.util.Log.d("MainViewModel", "loadRecommendations: SUCCESS - ${movieList.size} recommendations${if (refresh) " (shuffled)" else ""}")
                 }
                 .onFailure { exception ->
                     _error.value = exception.message ?: "Failed to load recommendations"
@@ -323,6 +330,7 @@ class MainViewModel(
                 }
 
             _isLoading.value = false
+            _isRefreshing.value = false
         }
     }
 }

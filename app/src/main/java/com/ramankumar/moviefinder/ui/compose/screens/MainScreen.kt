@@ -210,7 +210,7 @@ fun MainScreen(
                         viewModel.toggleFavorite(movie.id)
                     },
                     onRefresh = {
-                        viewModel.loadRecommendations()
+                        viewModel.loadRecommendations(refresh = true)
                     },
                     modifier = Modifier.padding(paddingValues)
                 )
