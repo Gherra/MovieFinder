@@ -124,6 +124,11 @@ dependencies {
 
     implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:13.0.0")
 
+    // ExoPlayer for fast trailer playback
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-ui:1.2.1")
+    implementation("androidx.media3:media3-common:1.2.1")
+
     // Gemini
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 

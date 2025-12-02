@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.ramankumar.moviefinder.model.Movie
 import com.ramankumar.moviefinder.ui.compose.components.LoadingIndicator
+import com.ramankumar.moviefinder.ui.compose.components.TrailerPlayer
 import com.ramankumar.moviefinder.ui.compose.theme.Gold
 import com.ramankumar.moviefinder.ui.compose.theme.Red
 import com.ramankumar.moviefinder.ui.swipe.SwipeViewModel
@@ -43,8 +44,14 @@ fun SwipeScreen(
     val swipeStats by viewModel.swipeStats.collectAsState()
     val showResetDialog by viewModel.showResetDialog.collectAsState()
     val showInfoDialog by viewModel.showInfoDialog.collectAsState()
+    val trailerCache by viewModel.trailerCache.collectAsState()
 
     val currentMovie = movies.getOrNull(currentIndex)
+
+    // Preload trailers when screen first loads or index changes
+    LaunchedEffect(currentIndex) {
+        viewModel.preloadTrailers(currentIndex)
+    }
 
     // Swipe state
     var offsetX by remember { mutableFloatStateOf(0f) }
@@ -223,6 +230,7 @@ fun SwipeScreen(
                 currentMovie != null -> {
                     SwipeCard(
                         movie = currentMovie,
+                        youtubeKey = trailerCache[currentMovie.id],
                         offsetX = offsetX,
                         offsetY = offsetY,
                         onDrag = { dragAmount ->
@@ -288,6 +296,7 @@ fun SwipeScreen(
 @Composable
 fun SwipeCard(
     movie: Movie,
+    youtubeKey: String?,
     offsetX: Float,
     offsetY: Float,
     onDrag: (Offset) -> Unit,
@@ -361,15 +370,26 @@ fun SwipeCard(
             elevation = CardDefaults.cardElevation(8.dp)
         ) {
             Column {
-                // Movie Poster
-                AsyncImage(
-                    model = movie.getPosterUrl(),
-                    contentDescription = movie.title,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentScale = ContentScale.Crop
-                )
+                // Trailer Player (fallback to poster if no trailer)
+                if (youtubeKey != null) {
+                    TrailerPlayer(
+                        youtubeKey = youtubeKey,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        autoPlay = true
+                    )
+                } else {
+                    // Fallback to poster if no trailer available
+                    AsyncImage(
+                        model = movie.getPosterUrl(),
+                        contentDescription = movie.title,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentScale = ContentScale.Crop
+                    )
+                }
 
                 // Movie Info
                 Column(
