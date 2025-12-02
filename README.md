@@ -45,7 +45,9 @@ cd MovieFinder
 2. Create a new Firebase project
 3. Add a new Android App
 4. Use the package name:
-  - com.ramankumar.moviefinder
+```
+com.ramankumar.moviefinder
+```
 5. Download your **google-services.json**
 6. Paste into `app/` directory:
 ```
