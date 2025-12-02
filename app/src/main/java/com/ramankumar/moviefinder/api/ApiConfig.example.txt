@@ -5,4 +5,5 @@ object ApiConfig {
     // and then rename the file from ApiConfig.example.txt to ApiConfig.kt
 
     const val API_KEY = "YOUR_TMDB_API_KEY_HERE"
+    const val GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"
 }
