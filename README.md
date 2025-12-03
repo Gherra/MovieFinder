@@ -1,14 +1,9 @@
 # Movie Finder App
 
-<img width="207" height="450" alt="image" src="https://github.com/user-attachments/assets/14648177-e380-4dc0-8103-3e6d27d30cfd" />
-
-<img width="207" height="450" alt="image" src="https://github.com/user-attachments/assets/fec078a5-067e-45f5-adb7-4e33b667c8f8" />
-
-<img width="207" height="450" alt="image" src="https://github.com/user-attachments/assets/5aff21a4-1670-44ad-bdeb-ee25cc80b0ea" />
-
-<img width="207" height="450" alt="image" src="https://github.com/user-attachments/assets/5654591e-7e83-4fd9-b1e4-de75619cf90a" />
-
-
+<img width="207" height="450" alt="LoginPage" src="https://github.com/user-attachments/assets/387ab0f6-fc58-457e-869d-9ac1a719c229" />
+<img width="207" height="450" alt="MovieFinderSearchPage" src="https://github.com/user-attachments/assets/4cf87d30-d0b6-4903-9ef4-acf82ee69a57" />
+<img width="207" height="450" alt="MovieFinderExplorePage" src="https://github.com/user-attachments/assets/69fdccb2-0d1d-4d6c-a8a3-c4b80d6b29dd" />
+<img width="207" height="450" alt="MovieFinderSwipePage" src="https://github.com/user-attachments/assets/736c9d60-5be1-48c3-8435-0d135f1bba55" />
 
 Android movie discovery app using The Movie Database (TMDb) API.
 
